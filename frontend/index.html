@@ -6,43 +6,47 @@
     <title>Calcula Fácil - Ferramentas Úteis, grátis e sem cadastro</title>
     <style>
         body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; text-align: center; padding: 50px 20px; }
-        h1 { color: #1a73e8; margin-bottom: 30px; }
+        h1 { color: #1a73e8; margin-bottom: 10px; }
+        .subtitle { color: #666; margin-bottom: 30px; font-size: 15px; }
         .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; max-width: 1000px; margin: 0 auto; }
-        .card { background: white; padding: 30px; border-radius: 15px; shadow: 0 4px 6px rgba(0,0,0,0.1); transition: transform 0.2s; text-decoration: none; color: inherit; display: block; }
+        .card { background: white; padding: 30px; border-radius: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); transition: transform 0.2s; text-decoration: none; color: inherit; display: block; }
         .card:hover { transform: translateY(-5px); box-shadow: 0 8px 15px rgba(0,0,0,0.1); }
-        .card h3 { margin: 0; color: #333; }
-        .card p { color: #666; font-size: 14px; }
-        .badge { background: #e8f0fe; color: #1a73e8; padding: 5px 10px; border-radius: 5px; font-size: 12px; font-weight: bold; }
+        .card h3 { margin: 10px 0 8px; color: #333; }
+        .card p { color: #666; font-size: 14px; margin: 0; }
+        .badge { display: inline-block; padding: 5px 10px; border-radius: 5px; font-size: 12px; font-weight: bold; }
+        .badge-trabalhista { background: #e8f0fe; color: #1a73e8; }
+        .badge-saude      { background: #e6f4ea; color: #2e7d32; }
+        .badge-financas   { background: #fff3e0; color: #e65100; }
+        .badge-breve      { background: #f3e5f5; color: #6a1b9a; }
     </style>
     <link rel="icon" type="image/png" href="/favicon.png">
-<link rel="apple-touch-icon" href="/favicon.png">
+    <link rel="apple-touch-icon" href="/favicon.png">
 </head>
 <body>
 
     <h1>Calcula Fácil</h1>
-    <p>Ferramentas simples para facilitar seu dia a dia.</p>
+    <p class="subtitle">Ferramentas simples para facilitar seu dia a dia.</p>
 
     <div class="grid">
-        <!-- BOTÃO PARA A CALCULADORA -->
-        <a href="/calculadora-horas/calculadora.html" class="card">
-    <span class="badge">Trabalhista</span>
-    <h3>Calculadora de Horas Extras</h3>
-    <p>Calcule 50%, 100% e saiba quanto vai receber no final do mês.</p>
-</a>
 
- <div class="grid">
-        <!-- BOTÃO PARA A CALCULADORA -->
+        <a href="/calculadora-horas/calculadora.html" class="card">
+            <span class="badge badge-trabalhista">Trabalhista</span>
+            <h3>Calculadora de Horas Extras</h3>
+            <p>Calcule 50%, 100% e saiba quanto vai receber no final do mês.</p>
+        </a>
+
         <a href="/calculadora-imc/calculadora_imc.html" class="card">
-    <span class="badge">Saúde</span>
-    <h3>Calculadora IMC </h3>
-    <p>Descubra se você está no seu peso ideal.</p>
-</a>
-        <!-- ESPAÇO PARA FUTURAS FERRAMENTAS -->
-        <div class="card" style="opacity: 0.6; cursor: not-allowed;">
-            <span class="badge">Em breve</span>
-            <h3>Outras Cauculadoras</h3>
-            <p>aguarde, em breve mais ferramentas</p>
-        </div>
+            <span class="badge badge-saude">Saúde</span>
+            <h3>Calculadora de IMC</h3>
+            <p>Descubra se você está no seu peso ideal.</p>
+        </a>
+
+        <a href="/financas/" class="card">
+            <span class="badge badge-financas">Finanças</span>
+            <h3>Finanças Pessoais</h3>
+            <p>Financiamento, investimentos e FGTS — simule antes de decidir.</p>
+        </a>
+
     </div>
 
 </body>

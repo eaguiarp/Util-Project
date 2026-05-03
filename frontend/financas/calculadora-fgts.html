@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculadora de FGTS - Calcula Fácil</title>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; color: #333; min-height: 100vh; padding: 2rem 1rem; }
+        .container { max-width: 850px; margin: 0 auto; background: white; border-radius: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); padding: 2rem; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; }
+        .header a { color: #1a73e8; text-decoration: none; font-size: 14px; font-weight: bold; }
+        .header a:hover { text-decoration: underline; }
+        h1 { font-size: 24px; color: #1a73e8; margin-bottom: 0.25rem; }
+        .subtitle { font-size: 14px; color: #666; margin-bottom: 1.5rem; }
+        .section-title { font-size: 12px; font-weight: bold; color: #1a73e8; text-transform: uppercase; letter-spacing: 0.06em; margin: 1.5rem 0 1rem; border-bottom: 2px solid #e8f0fe; padding-bottom: 5px; }
+        .row { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin-bottom: 15px; }
+        .field { display: flex; flex-direction: column; gap: 5px; }
+        .field label { font-size: 13px; color: #555; font-weight: 500; }
+        .field input, .field select { padding: 10px; border: 1px solid #ccc; border-radius: 8px; font-size: 14px; color: #333; background: #fff; outline: none; transition: all 0.2s; }
+        .field input:focus, .field select:focus { border-color: #1a73e8; box-shadow: 0 0 0 3px #e8f0fe; }
+        .field small { font-size: 11px; color: #888; }
+        .btn-group { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+        .btn { background: #1a73e8; color: white; border: none; border-radius: 8px; padding: 12px 24px; font-size: 15px; font-weight: bold; cursor: pointer; transition: background 0.2s, transform 0.1s; display: inline-flex; align-items: center; justify-content: center; gap: 8px; flex: 1; min-width: 200px; }
+        .btn:hover { background: #1557b0; }
+        .btn:active { transform: scale(0.98); }
+        .btn-share { background: #25D366; color: white; display: none; }
+        .btn-share:hover { background: #1ebe57; }
+        .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 15px; margin: 1rem 0; }
+        .card { background: white; border-radius: 12px; padding: 1rem; box-shadow: 0 2px 4px rgba(0,0,0,0.05); border: 1px solid #e8f0fe; }
+        .card-label { font-size: 12px; color: #666; margin-bottom: 5px; font-weight: 500; }
+        .card-value { font-size: 18px; font-weight: bold; color: #1a73e8; }
+        .total-box { background: #e8f0fe; border-radius: 12px; padding: 20px; margin-top: 20px; }
+        .total-row { display: flex; justify-content: space-between; padding: 8px 0; font-size: 15px; color: #555; border-bottom: 1px solid #d0dff8; }
+        .total-row:last-child { border-bottom: none; }
+        .total-row.destaque { font-weight: bold; color: #1a73e8; font-size: 18px; border-top: 2px solid #fff; padding-top: 15px; margin-top: 5px; border-bottom: none; }
+        .info-box { background: #fff8e1; border-left: 4px solid #f9a825; border-radius: 8px; padding: 12px 16px; margin-top: 16px; font-size: 13px; color: #555; line-height: 1.6; }
+        .footer-note { margin-top: 1.5rem; font-size: 12px; color: #888; line-height: 1.6; text-align: center; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h1>Calculadora de FGTS</h1>
+        <a href="/financas/">← Voltar</a>
+    </div>
+    <p class="subtitle">Estime o saldo do FGTS e o valor da multa em caso de demissão sem justa causa.</p>
+
+    <p class="section-title">Dados do Emprego</p>
+    <div class="row">
+        <div class="field">
+            <label>Salário Bruto Atual (R$)</label>
+            <input type="number" id="salario" value="3000" min="0" step="100">
+        </div>
+        <div class="field">
+            <label>Data de Admissão</label>
+            <input type="date" id="admissao">
+        </div>
+        <div class="field">
+            <label>Saldo FGTS na Conta (R$)</label>
+            <input type="number" id="saldoAtual" value="0" min="0" step="100">
+            <small>Consulte no app FGTS da Caixa</small>
+        </div>
+        <div class="field">
+            <label>Tipo de Demissão</label>
+            <select id="tipoDemissao">
+                <option value="sjc">Sem Justa Causa (pelo empregador)</option>
+                <option value="cjc">Com Justa Causa (pelo empregador)</option>
+                <option value="acordo">Acordo entre as partes</option>
+                <option value="pedido">Pedido de demissão (pelo funcionário)</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="btn-group">
+        <button class="btn" onclick="calcular()">🧮 Calcular FGTS</button>
+        <button class="btn btn-share" id="btnCompartilhar" onclick="compartilhar()">📲 Compartilhar Resumo</button>
+    </div>
+
+    <p class="section-title">Resultado</p>
+    <div class="cards">
+        <div class="card"><div class="card-label">Tempo de Serviço</div><div class="card-value" id="rTempo">—</div></div>
+        <div class="card"><div class="card-label">Depósitos Estimados</div><div class="card-value" id="rDepositos">R$ 0,00</div></div>
+        <div class="card"><div class="card-label">Saldo Total FGTS</div><div class="card-value" id="rSaldo">R$ 0,00</div></div>
+        <div class="card"><div class="card-label">Multa (40% ou 20%)</div><div class="card-value" id="rMulta" style="color:#c62828">R$ 0,00</div></div>
+    </div>
+
+    <div class="total-box" id="totalBox" style="display:none">
+        <div class="total-row"><span>Saldo FGTS (conta)</span><span id="t1">R$ 0,00</span></div>
+        <div class="total-row"><span>Multa rescisória</span><span id="t2">R$ 0,00</span></div>
+        <div class="total-row"><span>Pode sacar do FGTS</span><span id="t3">—</span></div>
+        <div class="total-row destaque"><span>Total FGTS a receber</span><span id="tTotal">R$ 0,00</span></div>
+    </div>
+
+    <div class="info-box" id="infoBox" style="display:none">
+        <strong>ℹ️ Sobre este tipo de demissão:</strong><br>
+        <span id="infoTexto"></span>
+    </div>
+
+    <p class="footer-note">
+        ⚠️ Os depósitos estimados consideram 8% do salário bruto por mês mais correção básica.<br>
+        O saldo real pode variar. Consulte sempre o aplicativo FGTS da Caixa Econômica Federal.
+    </p>
+</div>
+<script>
+    function fmt(v){ return v.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}); }
+
+    const infos = {
+        sjc:   'Na demissão sem justa causa, você tem direito a sacar todo o saldo do FGTS + multa de 40% sobre o saldo. O empregador também paga 10% à União.',
+        cjc:   'Na demissão por justa causa, infelizmente não há direito à multa de 40% nem ao saque do FGTS (exceto em casos específicos como aposentadoria ou doenças graves).',
+        acordo:'No acordo entre as partes (art. 484-A da CLT), você pode sacar até 80% do FGTS e a multa é de 20% (metade paga pelo empregador).',
+        pedido:'No pedido de demissão, não há direito à multa de 40% nem ao saque imediato do FGTS (exceto situações especiais).'
+    };
+
+    // Preenche data de admissão com 2 anos atrás como padrão
+    window.onload = function(){
+        const d = new Date();
+        d.setFullYear(d.getFullYear() - 2);
+        document.getElementById('admissao').value = d.toISOString().slice(0,10);
+    };
+
+    function calcular(){
+        const salario   = parseFloat(document.getElementById('salario').value)||0;
+        const admissao  = new Date(document.getElementById('admissao').value);
+        const saldoAtual= parseFloat(document.getElementById('saldoAtual').value)||0;
+        const tipo      = document.getElementById('tipoDemissao').value;
+        const hoje      = new Date();
+
+        if(!document.getElementById('admissao').value){ alert('Informe a data de admissão.'); return; }
+
+        const meses = Math.max(0, (hoje.getFullYear() - admissao.getFullYear())*12 + (hoje.getMonth() - admissao.getMonth()));
+        const anos  = Math.floor(meses/12);
+        const mRest = meses % 12;
+
+        // Estimativa simples: 8% salário × meses (sem correção monetária detalhada)
+        const depositosEstimados = salario * 0.08 * meses;
+        const saldoTotal = saldoAtual > 0 ? saldoAtual : depositosEstimados;
+
+        let multa = 0;
+        let podeSacar = false;
+        let saquePct = 0;
+
+        if(tipo === 'sjc'){
+            multa = saldoTotal * 0.40;
+            podeSacar = true;
+            saquePct = 100;
+        } else if(tipo === 'acordo'){
+            multa = saldoTotal * 0.20;
+            podeSacar = true;
+            saquePct = 80;
+        } else {
+            multa = 0;
+            podeSacar = false;
+        }
+
+        const valorSaque = podeSacar ? saldoTotal * (saquePct/100) : 0;
+        const totalReceber = valorSaque + multa;
+
+        const tempoStr = anos > 0 ? `${anos} ano${anos>1?'s':''} ${mRest > 0 ? 'e ' + mRest + ' mês' + (mRest>1?'es':'') : ''}` : `${meses} mês${meses>1?'es':''}`;
+
+        document.getElementById('rTempo').textContent = tempoStr;
+        document.getElementById('rDepositos').textContent = fmt(depositosEstimados);
+        document.getElementById('rSaldo').textContent = fmt(saldoTotal);
+        document.getElementById('rMulta').textContent = fmt(multa);
+
+        document.getElementById('t1').textContent = fmt(saldoTotal);
+        document.getElementById('t2').textContent = fmt(multa);
+        document.getElementById('t3').textContent = podeSacar ? `Sim (${saquePct}% = ${fmt(valorSaque)})` : 'Não neste tipo de demissão';
+        document.getElementById('tTotal').textContent = fmt(totalReceber);
+
+        document.getElementById('totalBox').style.display = 'block';
+        document.getElementById('infoTexto').textContent = infos[tipo];
+        document.getElementById('infoBox').style.display = 'block';
+        document.getElementById('btnCompartilhar').style.display = 'inline-flex';
+    }
+
+    function compartilhar(){
+        const saldo = document.getElementById('rSaldo').textContent;
+        const multa = document.getElementById('rMulta').textContent;
+        const total = document.getElementById('tTotal').textContent;
+        const tipo  = document.getElementById('tipoDemissao');
+        const texto = `📋 Simulei meu FGTS no Calcula Fácil!\n\n💰 Saldo FGTS: ${saldo}\n⚖️ Multa Rescisória: ${multa}\n🏆 Total a receber: ${total}\n📄 Tipo: ${tipo.options[tipo.selectedIndex].text}\n\nSimule você também: util.com.br/financas/`;
+        if(navigator.share){ navigator.share({title:'Meu FGTS',text:texto}); }
+        else { navigator.clipboard.writeText(texto).then(()=>alert('Resumo copiado! Cole onde desejar.')); }
+    }
+</script>
+</body>
+</html>

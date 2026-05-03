@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulador de Investimento e Metas - Calcula Fácil</title>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; color: #333; min-height: 100vh; padding: 2rem 1rem; }
+        .container { max-width: 850px; margin: 0 auto; background: white; border-radius: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); padding: 2rem; }
+        
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; }
+        .header a { color: #1a73e8; text-decoration: none; font-size: 14px; font-weight: bold; }
+        .header a:hover { text-decoration: underline; }
+        h1 { font-size: 24px; color: #1a73e8; margin-bottom: 0.25rem; }
+        .subtitle { font-size: 14px; color: #666; margin-bottom: 1.5rem; }
+
+        /* Sistema de Abas */
+        .tab-buttons { display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 2px solid #e8f0fe; padding-bottom: 10px; }
+        .tab-btn { background: none; border: none; font-size: 16px; font-weight: bold; color: #666; padding: 8px 16px; cursor: pointer; border-radius: 8px; transition: 0.2s; }
+        .tab-btn:hover { background: #f0f2f5; }
+        .tab-btn.active { background: #e8f0fe; color: #1a73e8; }
+        .tab-content { display: none; animation: fadeIn 0.4s; }
+        .tab-content.active { display: block; }
+
+        .section-title { font-size: 12px; font-weight: bold; color: #1a73e8; text-transform: uppercase; letter-spacing: 0.06em; margin: 1.5rem 0 1rem; border-bottom: 2px solid #e8f0fe; padding-bottom: 5px; }
+        .row { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin-bottom: 15px; }
+        .field { display: flex; flex-direction: column; gap: 5px; }
+        .field label { font-size: 13px; color: #555; font-weight: 500; }
+        .field input, .field select { padding: 10px; border: 1px solid #ccc; border-radius: 8px; font-size: 14px; color: #333; background: #fff; outline: none; transition: all 0.2s; }
+        .field input:focus, .field select:focus { border-color: #1a73e8; box-shadow: 0 0 0 3px #e8f0fe; }
+        .hint { font-size: 11px; color: #1a73e8; margin-top: 2px; }
+        
+        .btn-group { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+        .btn { background: #1a73e8; color: white; border: none; border-radius: 8px; padding: 12px 24px; font-size: 15px; font-weight: bold; cursor: pointer; transition: background 0.2s, transform 0.1s; display: inline-flex; align-items: center; justify-content: center; gap: 8px; flex: 1; min-width: 200px; }
+        .btn:hover { background: #1557b0; }
+        .btn:active { transform: scale(0.98); }
+        .btn-share { background: #25D366; color: white; display: none; }
+        .btn-share:hover { background: #1ebe57; }
+        
+        .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 15px; margin: 1rem 0; }
+        .card { background: white; border-radius: 12px; padding: 1rem; box-shadow: 0 2px 4px rgba(0,0,0,0.05); border: 1px solid #e8f0fe; }
+        .card-label { font-size: 12px; color: #666; margin-bottom: 5px; font-weight: 500; }
+        .card-value { font-size: 18px; font-weight: bold; color: #1a73e8; }
+        
+        .total-box { background: #e8f0fe; border-radius: 12px; padding: 20px; margin-top: 20px; }
+        .total-row { display: flex; justify-content: space-between; padding: 8px 0; font-size: 15px; color: #555; border-bottom: 1px solid #d0dff8; }
+        .total-row:last-child { border-bottom: none; }
+        .total-row.destaque { font-weight: bold; color: #1a73e8; font-size: 18px; border-top: 2px solid #fff; padding-top: 15px; margin-top: 5px; border-bottom: none; }
+        
+        .chart-wrap { margin-top: 20px; background: #f8f9ff; border-radius: 12px; padding: 16px; }
+        canvas { width: 100% !important; }
+        .footer-note { margin-top: 1.5rem; font-size: 12px; color: #888; line-height: 1.6; text-align: center; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .presets { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 15px; }
+        .preset-btn { background: #e8f0fe; color: #1a73e8; border: 1px solid #c5d9f7; border-radius: 20px; padding: 6px 14px; font-size: 13px; cursor: pointer; transition: all 0.2s; }
+        .preset-btn:hover { background: #1a73e8; color: white; }
+
+        /* Estilos específicos da Aba Metas */
+        .meta-destaque { background: #2e7d32; color: white; padding: 20px; border-radius: 12px; text-align: center; margin-top: 20px; display: none; }
+        .meta-destaque h3 { margin-bottom: 10px; font-size: 16px; font-weight: 500; }
+        .meta-destaque .valor { font-size: 32px; font-weight: bold; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h1>Planejamento Financeiro</h1>
+        <a href="/">← Voltar</a>
+    </div>
+    <p class="subtitle">Descubra quanto seu dinheiro vai render ou planeje uma meta futura.</p>
+
+    <!-- Navegação das Abas -->
+    <div class="tab-buttons">
+        <button class="tab-btn active" onclick="mudarAba('simulador', this)">Simular Rendimento</button>
+        <button class="tab-btn" onclick="mudarAba('metas', this)">Planejar uma Meta</button>
+    </div>
+
+    <!-- ABA 1: SIMULADOR ORIGINAL -->
+    <div id="simulador" class="tab-content active">
+        <p class="section-title">Taxas de Referência</p>
+        <div class="presets">
+            <button class="preset-btn" onclick="setTaxa(1.07, 'Selic (~13% a.a.)')">Selic ~13% a.a.</button>
+            <button class="preset-btn" onclick="setTaxa(1.0, 'CDB 120% CDI (~12% a.a.)')">CDB 120% CDI</button>
+            <button class="preset-btn" onclick="setTaxa(0.5, 'Poupança (~6% a.a.)')">Poupança ~6% a.a.</button>
+            <button class="preset-btn" onclick="setTaxa(0.7, 'LCI/LCA isentas')">LCI/LCA</button>
+        </div>
+
+        <p class="section-title">Dados do Investimento</p>
+        <div class="row">
+            <div class="field">
+                <label>Aporte Inicial (R$)</label>
+                <input type="number" id="aporteInicial" value="5000" min="0" step="100">
+            </div>
+            <div class="field">
+                <label>Aporte Mensal (R$)</label>
+                <input type="number" id="aporteMensal" value="500" min="0" step="50">
+            </div>
+            <div class="field">
+                <label>Taxa Mensal (%)</label>
+                <input type="number" id="taxa" value="1.07" min="0.01" step="0.01">
+                <span class="hint" id="hintTaxa"></span>
+            </div>
+            <div class="field">
+                <label>Período (meses)</label>
+                <input type="number" id="periodo" value="60" min="1" max="600">
+            </div>
+            <div class="field">
+                <label>IR sobre rendimentos</label>
+                <select id="ir">
+                    <option value="0.225">Até 6 meses (22,5%)</option>
+                    <option value="0.20">6 a 12 meses (20%)</option>
+                    <option value="0.175">12 a 24 meses (17,5%)</option>
+                    <option value="0.15" selected>Acima de 24 meses (15%)</option>
+                    <option value="0">Isento (LCI, LCA, etc.)</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="btn-group">
+            <button class="btn" onclick="calcular()">📈 Simular Rendimento</button>
+            <button class="btn btn-share" id="btnCompartilharSimulador" onclick="compartilharSimulador()">📲 Compartilhar</button>
+        </div>
+
+        <div class="cards">
+            <div class="card"><div class="card-label">Total Investido</div><div class="card-value" id="rInvestido">R$ 0,00</div></div>
+            <div class="card"><div class="card-label">Rendimento Bruto</div><div class="card-value" id="rRendBruto">R$ 0,00</div></div>
+            <div class="card"><div class="card-label">IR estimado</div><div class="card-value" id="rIR">R$ 0,00</div></div>
+            <div class="card"><div class="card-label">Rendimento Líquido</div><div class="card-value" id="rRendLiq" style="color:#2e7d32">R$ 0,00</div></div>
+        </div>
+
+        <div class="total-box">
+            <div class="total-row destaque"><span>Montante Final Líquido</span><span id="r2Total">R$ 0,00</span></div>
+        </div>
+
+        <div class="chart-wrap" id="chartWrap" style="display:none">
+            <canvas id="myChart" height="260"></canvas>
+        </div>
+    </div>
+
+    <!-- ABA 2: CALCULADORA DE METAS -->
+    <div id="metas" class="tab-content">
+        <p class="section-title">O que você quer alcançar?</p>
+        <div class="row">
+            <div class="field" style="grid-column: span 2;">
+                <label>Nome do seu Objetivo</label>
+                <input type="text" id="metaNome" placeholder="Ex: Viagem internacional com a família" value="">
+            </div>
+            <div class="field">
+                <label>Valor da Meta (R$)</label>
+                <input type="number" id="metaObjetivo" value="30000" min="100" step="1000">
+            </div>
+        </div>
+
+        <p class="section-title">Como você vai chegar lá?</p>
+        <div class="row">
+            <div class="field">
+                <label>Já tem algum valor guardado? (R$)</label>
+                <input type="number" id="metaInicial" value="0" min="0" step="100">
+            </div>
+            <div class="field">
+                <label>Em quanto tempo? (Meses)</label>
+                <input type="number" id="metaMeses" value="12" min="1" max="600">
+            </div>
+            <div class="field">
+                <label>Onde vai deixar o dinheiro?</label>
+                <select id="metaOnde">
+                    <option value="1.0">Caixinhas Nubank / PicPay / CDB (Rendimento Alto)</option>
+                    <option value="0.8">LCI / LCA (Isento de IR)</option>
+                    <option value="0.5">Poupança (Rendimento Baixo)</option>
+                    <option value="0.0">Cofre de gesso (Sem rendimento)</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="btn-group">
+            <button class="btn" style="background: #2e7d32;" onclick="calcularMeta()">🎯 Descobrir Aporte</button>
+            <button class="btn btn-share" id="btnCompartilharMeta" onclick="compartilharMeta()" style="background: #1a73e8;">📲 Compartilhar Plano</button>
+        </div>
+
+        <div class="meta-destaque" id="boxMetaResultado">
+            <h3 id="textoResultadoMeta">Para alcançar sua meta, você precisará investir por mês:</h3>
+            <div class="valor" id="resAporteNecessario">R$ 0,00</div>
+            <p style="font-size: 12px; margin-top: 15px; opacity: 0.9;">O poder dos juros compostos vai te ajudar a chegar lá mais rápido.</p>
+        </div>
+    </div>
+
+    <p class="footer-note">
+        ⚠️ Simulação com juros compostos. Rentabilidade passada não garante rentabilidade futura. Consulte seu assessor financeiro.
+    </p>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script>
+    let myChart = null;
+    function fmt(v){ return v.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}); }
+
+    // Função para alternar entre as abas
+    function mudarAba(abaId, btn) {
+        document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        
+        document.getElementById(abaId).classList.add('active');
+        btn.classList.add('active');
+    }
+
+    // Funções do Simulador Original
+    function setTaxa(v, label){
+        document.getElementById('taxa').value = v;
+        document.getElementById('hintTaxa').textContent = label;
+    }
+
+    function calcular(){
+        const ai   = parseFloat(document.getElementById('aporteInicial').value)||0;
+        const am   = parseFloat(document.getElementById('aporteMensal').value)||0;
+        const taxa = parseFloat(document.getElementById('taxa').value)/100||0;
+        const n    = parseInt(document.getElementById('periodo').value)||1;
+        const ir   = parseFloat(document.getElementById('ir').value)||0;
+
+        let saldo = ai;
+        const labels = [], dataInvestido = [], dataMontante = [];
+        let totalInvestido = ai;
+
+        for(let i=1;i<=n;i++){
+            saldo = saldo * (1 + taxa) + am;
+            totalInvestido += am;
+            if(i % Math.max(1, Math.floor(n/12)) === 0 || i === n){
+                labels.push('Mês ' + i);
+                dataInvestido.push(parseFloat(totalInvestido.toFixed(2)));
+                dataMontante.push(parseFloat(saldo.toFixed(2)));
+            }
+        }
+
+        const rendBruto = saldo - totalInvestido;
+        const impostoIR = rendBruto * ir;
+        const rendLiq = rendBruto - impostoIR;
+        const totalLiq = totalInvestido + rendLiq;
+
+        document.getElementById('rInvestido').textContent = fmt(totalInvestido);
+        document.getElementById('rRendBruto').textContent = fmt(rendBruto);
+        document.getElementById('rIR').textContent = fmt(impostoIR);
+        document.getElementById('rRendLiq').textContent = fmt(rendLiq);
+        document.getElementById('r2Total').textContent = fmt(totalLiq);
+
+        document.getElementById('btnCompartilharSimulador').style.display = 'inline-flex';
+        document.getElementById('chartWrap').style.display = 'block';
+
+        if(myChart) myChart.destroy();
+        const ctx = document.getElementById('myChart').getContext('2d');
+        myChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels,
+                datasets: [
+                    { label: 'Montante Bruto', data: dataMontante, borderColor: '#1a73e8', backgroundColor: 'rgba(26,115,232,0.08)', fill: true, tension: 0.3, pointRadius: 3 },
+                    { label: 'Total Investido', data: dataInvestido, borderColor: '#aaa', borderDash: [5,5], backgroundColor: 'transparent', fill: false, tension: 0, pointRadius: 0 }
+                ]
+            },
+            options: { responsive: true, plugins: { legend: { position: 'bottom' } }, scales: { y: { ticks: { callback: v => 'R$ ' + (v/1000).toFixed(0) + 'k' } } } }
+        });
+    }
+
+    function compartilharSimulador(){
+        const tot = document.getElementById('r2Total').textContent;
+        const n = document.getElementById('periodo').value;
+        const texto = `📈 Simulei meu investimento no Calcula Fácil!\n\nEm ${n} meses terei aproximadamente:\n🏆 Montante Final: ${tot}\n\nSimule você também: calculafacil.up.railway.app`;
+        if(navigator.share){ navigator.share({title:'Minha Simulação',text:texto}); }
+        else { navigator.clipboard.writeText(texto).then(()=>alert('Copiado!')); }
+    }
+
+    // Função NOVA da Calculadora de Metas
+    function calcularMeta() {
+        const objetivo = parseFloat(document.getElementById('metaObjetivo').value) || 0;
+        const inicial = parseFloat(document.getElementById('metaInicial').value) || 0;
+        const meses = parseInt(document.getElementById('metaMeses').value) || 1;
+        const taxaStr = document.getElementById('metaOnde').value;
+        const taxa = parseFloat(taxaStr) / 100;
+        const nomeMeta = document.getElementById('metaNome').value || "sua meta";
+
+        let pmt = 0; // Aporte Mensal Necessário
+
+        if (taxa === 0) {
+            // Se guardar no cofre, é só dividir o que falta
+            pmt = (objetivo - inicial) / meses;
+        } else {
+            // Fórmula do PMT: PMT = (FV - PV * (1+i)^n) / (((1+i)^n - 1) / i)
+            const fv = objetivo;
+            const pv = inicial;
+            const i = taxa;
+            const n = meses;
+            
+            const termo1 = pv * Math.pow(1 + i, n);
+            const termo2 = (Math.pow(1 + i, n) - 1) / i;
+            pmt = (fv - termo1) / termo2;
+        }
+
+        // Se a pessoa já tem mais do que a meta
+        if (pmt <= 0) pmt = 0; 
+
+        document.getElementById('textoResultadoMeta').textContent = `Para alcançar "${nomeMeta}" em ${meses} meses, invista por mês:`;
+        document.getElementById('resAporteNecessario').textContent = fmt(pmt);
+        
+        document.getElementById('boxMetaResultado').style.display = 'block';
+        document.getElementById('btnCompartilharMeta').style.display = 'inline-flex';
+    }
+
+    function compartilharMeta(){
+        const nomeMeta = document.getElementById('metaNome').value || "meu objetivo";
+        const meses = document.getElementById('metaMeses').value;
+        const aporte = document.getElementById('resAporteNecessario').textContent;
+        const objetivo = fmt(parseFloat(document.getElementById('metaObjetivo').value));
+        
+        const texto = `🎯 Fiz meu planejamento no Calcula Fácil!\n\nPara alcançar ${objetivo} (${nomeMeta}) em ${meses} meses, eu preciso investir:\n💰 ${aporte} por mês.\n\nFaça seu plano também: calculafacil.up.railway.app`;
+        
+        if(navigator.share){ navigator.share({title:'Meu Plano Financeiro',text:texto}); }
+        else { navigator.clipboard.writeText(texto).then(()=>alert('Plano copiado!')); }
+    }
+</script>
+</body>
+</html>

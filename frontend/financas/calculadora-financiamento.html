@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculadora de Financiamento - Calcula Fácil</title>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; color: #333; min-height: 100vh; padding: 2rem 1rem; }
+        .container { max-width: 850px; margin: 0 auto; background: white; border-radius: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); padding: 2rem; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; }
+        .header a { color: #1a73e8; text-decoration: none; font-size: 14px; font-weight: bold; }
+        .header a:hover { text-decoration: underline; }
+        h1 { font-size: 24px; color: #1a73e8; margin-bottom: 0.25rem; }
+        .subtitle { font-size: 14px; color: #666; margin-bottom: 1.5rem; }
+        .section-title { font-size: 12px; font-weight: bold; color: #1a73e8; text-transform: uppercase; letter-spacing: 0.06em; margin: 1.5rem 0 1rem; border-bottom: 2px solid #e8f0fe; padding-bottom: 5px; }
+        .tabs { display: flex; gap: 0; margin-bottom: 1.5rem; border-radius: 10px; overflow: hidden; border: 1px solid #c5d9f7; }
+        .tab { flex: 1; padding: 12px 16px; font-size: 14px; font-weight: 600; cursor: pointer; border: none; background: white; color: #888; transition: all 0.2s; text-align: center; }
+        .tab.ativo { background: #1a73e8; color: white; }
+        .tab:not(.ativo):hover { background: #e8f0fe; color: #1a73e8; }
+        .modo { display: none; }
+        .modo.ativo { display: block; }
+        .row { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin-bottom: 15px; }
+        .field { display: flex; flex-direction: column; gap: 5px; }
+        .field label { font-size: 13px; color: #555; font-weight: 500; }
+        .field small { font-size: 11px; color: #888; }
+        .field input, .field select { padding: 10px; border: 1px solid #ccc; border-radius: 8px; font-size: 14px; color: #333; background: #fff; outline: none; transition: all 0.2s; }
+        .field input:focus, .field select:focus { border-color: #1a73e8; box-shadow: 0 0 0 3px #e8f0fe; }
+        .btn-group { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+        .btn { background: #1a73e8; color: white; border: none; border-radius: 8px; padding: 12px 24px; font-size: 15px; font-weight: bold; cursor: pointer; transition: background 0.2s, transform 0.1s; display: inline-flex; align-items: center; justify-content: center; gap: 8px; flex: 1; min-width: 200px; }
+        .btn:hover { background: #1557b0; }
+        .btn:active { transform: scale(0.98); }
+        .btn-share { background: #25D366; color: white; display: none; }
+        .btn-share:hover { background: #1ebe57; }
+        .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 15px; margin: 1rem 0; }
+        .card { background: white; border-radius: 12px; padding: 1rem; box-shadow: 0 2px 4px rgba(0,0,0,0.05); border: 1px solid #e8f0fe; }
+        .card-label { font-size: 12px; color: #666; margin-bottom: 5px; font-weight: 500; }
+        .card-value { font-size: 18px; font-weight: bold; color: #1a73e8; }
+        .card-value.vermelho { color: #c62828; }
+        .total-box { background: #e8f0fe; border-radius: 12px; padding: 20px; margin-top: 20px; }
+        .total-row { display: flex; justify-content: space-between; padding: 8px 0; font-size: 15px; color: #555; border-bottom: 1px solid #d0dff8; }
+        .total-row:last-child { border-bottom: none; }
+        .total-row.destaque { font-weight: bold; color: #1a73e8; font-size: 18px; border-top: 2px solid #fff; padding-top: 15px; margin-top: 5px; border-bottom: none; }
+        .alerta-box { border-radius: 8px; padding: 14px 16px; margin-top: 16px; font-size: 13px; color: #555; line-height: 1.7; display: none; }
+        .alerta-box.ruim { background: #ffebee; border-left: 4px solid #e53935; }
+        .alerta-box.medio { background: #fff3e0; border-left: 4px solid #f9a825; }
+        .alerta-box.ok { background: #e8f5e9; border-left: 4px solid #43a047; }
+        .tabela-wrap { overflow-x: auto; margin-top: 20px; display: none; }
+        .tabela-wrap table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        .tabela-wrap th { text-align: left; color: #1a73e8; background: #e8f0fe; font-weight: 600; padding: 8px 10px; font-size: 12px; text-transform: uppercase; }
+        .tabela-wrap th:first-child { border-radius: 8px 0 0 8px; }
+        .tabela-wrap th:last-child { border-radius: 0 8px 8px 0; }
+        .tabela-wrap td { padding: 7px 10px; border-bottom: 1px solid #eee; color: #555; }
+        .tabela-wrap tr:hover td { background: #f8f9ff; }
+        .btn-outline { background: white; color: #1a73e8; border: 1px solid #1a73e8; padding: 8px 16px; font-size: 13px; border-radius: 8px; cursor: pointer; margin-top: 10px; }
+        .btn-outline:hover { background: #e8f0fe; }
+        .footer-note { margin-top: 1.5rem; font-size: 12px; color: #888; line-height: 1.6; text-align: center; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h1>Calculadora de Financiamento</h1>
+        <a href="/financas/">← Voltar</a>
+    </div>
+    <p class="subtitle">Simule um novo financiamento ou descubra a taxa de juros de um que você já tem.</p>
+
+    <div class="tabs">
+        <button class="tab ativo" id="tab-simular" onclick="setModo('simular')">🧮 Simular Financiamento</button>
+        <button class="tab" id="tab-descobrir" onclick="setModo('descobrir')">🔍 Descobrir Taxa / Juros</button>
+    </div>
+
+    <!-- MODO SIMULAR -->
+    <div class="modo ativo" id="modo-simular">
+        <p class="section-title">Dados do Financiamento</p>
+        <div class="row">
+            <div class="field"><label>Valor do Bem (R$)</label><input type="number" id="s-bem" value="50000" min="0" step="100"></div>
+            <div class="field"><label>Entrada (R$)</label><input type="number" id="s-entrada" value="10000" min="0" step="100"></div>
+            <div class="field"><label>Taxa de Juros (% a.m.)</label><input type="number" id="s-taxa" value="1.5" min="0.01" step="0.01"></div>
+            <div class="field"><label>Prazo (meses)</label><input type="number" id="s-prazo" value="48" min="1" max="480"></div>
+            <div class="field"><label>Sistema</label>
+                <select id="s-sistema">
+                    <option value="price">Price (parcelas fixas)</option>
+                    <option value="sac">SAC (parcelas decrescentes)</option>
+                </select>
+            </div>
+        </div>
+        <div class="btn-group">
+            <button class="btn" onclick="calcularSimular()">🧮 Calcular</button>
+            <button class="btn btn-share" id="s-share" onclick="compartilharSimular()">📲 Compartilhar</button>
+        </div>
+        <p class="section-title">Resumo</p>
+        <div class="cards">
+            <div class="card"><div class="card-label">Valor Financiado</div><div class="card-value" id="s-rFin">R$ 0,00</div></div>
+            <div class="card"><div class="card-label">1ª Parcela</div><div class="card-value" id="s-rPrim">R$ 0,00</div></div>
+            <div class="card"><div class="card-label">Última Parcela</div><div class="card-value" id="s-rUlt">R$ 0,00</div></div>
+            <div class="card"><div class="card-label">Total de Juros</div><div class="card-value vermelho" id="s-rJuros">R$ 0,00</div></div>
+        </div>
+        <div class="total-box">
+            <div class="total-row"><span>Valor do Bem</span><span id="s-tBem">R$ 0,00</span></div>
+            <div class="total-row"><span>Entrada</span><span id="s-tEntrada">R$ 0,00</span></div>
+            <div class="total-row"><span>Total de Juros</span><span id="s-tJuros" style="color:#c62828">R$ 0,00</span></div>
+            <div class="total-row destaque"><span>Total a Pagar</span><span id="s-tTotal">R$ 0,00</span></div>
+        </div>
+        <div style="text-align:center;margin-top:12px">
+            <button class="btn-outline" id="s-btnTab" onclick="toggleTabela()" style="display:none">📋 Ver tabela de parcelas</button>
+        </div>
+        <div class="tabela-wrap" id="s-tabWrap">
+            <table><thead><tr><th>#</th><th>Parcela</th><th>Amortização</th><th>Juros</th><th>Saldo Devedor</th></tr></thead>
+            <tbody id="s-tabBody"></tbody></table>
+        </div>
+    </div>
+
+    <!-- MODO DESCOBRIR -->
+    <div class="modo" id="modo-descobrir">
+        <p style="font-size:13px;color:#666;margin-bottom:14px">
+            Informe os dados do financiamento que você já tem — a calculadora descobre quanto de juros você está pagando.
+        </p>
+        <p class="section-title">Dados do seu financiamento atual</p>
+        <div class="row">
+            <div class="field">
+                <label>Valor Total do Bem (R$)</label>
+                <input type="number" id="d-bem" placeholder="Ex: 10000" min="0" step="100">
+            </div>
+            <div class="field">
+                <label>Entrada dada (R$)</label>
+                <input type="number" id="d-entrada" placeholder="Ex: 300 (ou 0)" min="0" step="50">
+                <small>Coloque 0 se não deu entrada</small>
+            </div>
+            <div class="field">
+                <label>Valor da Parcela (R$)</label>
+                <input type="number" id="d-parcela" placeholder="Ex: 400" min="0" step="10">
+            </div>
+            <div class="field">
+                <label>Número de Parcelas</label>
+                <input type="number" id="d-prazo" placeholder="Ex: 30" min="1" max="480">
+            </div>
+        </div>
+        <div class="btn-group">
+            <button class="btn" onclick="calcularDescobrir()">🔍 Calcular Taxa e Juros</button>
+            <button class="btn btn-share" id="d-share" onclick="compartilharDescobrir()">📲 Compartilhar</button>
+        </div>
+        <p class="section-title">O que você está pagando de juros</p>
+        <div class="cards">
+            <div class="card"><div class="card-label">Valor Financiado</div><div class="card-value" id="d-rFin">—</div></div>
+            <div class="card"><div class="card-label">Taxa Mensal</div><div class="card-value vermelho" id="d-rTaxaMes">—</div></div>
+            <div class="card"><div class="card-label">Taxa Anual</div><div class="card-value vermelho" id="d-rTaxaAno">—</div></div>
+            <div class="card"><div class="card-label">Total de Juros</div><div class="card-value vermelho" id="d-rJuros">—</div></div>
+        </div>
+        <div class="total-box" id="d-totalBox" style="display:none">
+            <div class="total-row"><span>Valor do Bem</span><span id="d-tBem">—</span></div>
+            <div class="total-row"><span>Entrada</span><span id="d-tEntrada">—</span></div>
+            <div class="total-row"><span>Valor Financiado</span><span id="d-tFin">—</span></div>
+            <div class="total-row"><span>Total pago em parcelas</span><span id="d-tParcelas">—</span></div>
+            <div class="total-row"><span>Total de Juros</span><span id="d-tJuros" style="color:#c62828">—</span></div>
+            <div class="total-row destaque"><span>Custo Total do Bem</span><span id="d-tTotal">—</span></div>
+        </div>
+        <div class="alerta-box" id="d-alerta"></div>
+    </div>
+
+    <p class="footer-note">
+        ⚠️ O modo "Descobrir Taxa" usa o método Price (parcelas fixas).<br>
+        Simulação sem IOF, seguros ou tarifas. Consulte sua instituição para condições exatas.
+    </p>
+</div>
+
+<script>
+    function fmt(v){ return v.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}); }
+    function fmtPct(v){ return v.toFixed(4).replace('.',',') + '%'; }
+    let sTabAberta = false;
+    let sParcelasG = [];
+
+    function setModo(modo){
+        document.querySelectorAll('.modo').forEach(m => m.classList.remove('ativo'));
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('ativo'));
+        document.getElementById('modo-' + modo).classList.add('ativo');
+        document.getElementById('tab-' + modo).classList.add('ativo');
+    }
+
+    function calcularSimular(){
+        const bem  = parseFloat(document.getElementById('s-bem').value)||0;
+        const ent  = parseFloat(document.getElementById('s-entrada').value)||0;
+        const taxa = parseFloat(document.getElementById('s-taxa').value)/100||0;
+        const n    = parseInt(document.getElementById('s-prazo').value)||1;
+        const sis  = document.getElementById('s-sistema').value;
+        const fin  = bem - ent;
+        if(fin <= 0){ alert('O valor financiado deve ser maior que zero.'); return; }
+
+        let parcelas = [], saldo = fin;
+        if(sis === 'price'){
+            const pmt = fin*(taxa*Math.pow(1+taxa,n))/(Math.pow(1+taxa,n)-1);
+            for(let i=1;i<=n;i++){
+                const j=saldo*taxa, a=pmt-j; saldo-=a;
+                parcelas.push({n:i,parcela:pmt,amort:a,juros:j,saldo:Math.max(saldo,0)});
+            }
+        } else {
+            const a=fin/n;
+            for(let i=1;i<=n;i++){
+                const j=saldo*taxa, p=a+j; saldo-=a;
+                parcelas.push({n:i,parcela:p,amort:a,juros:j,saldo:Math.max(saldo,0)});
+            }
+        }
+        sParcelasG = parcelas;
+        const totalPago = parcelas.reduce((s,p)=>s+p.parcela,0);
+        const totalJ    = parcelas.reduce((s,p)=>s+p.juros,0);
+
+        document.getElementById('s-rFin').textContent   = fmt(fin);
+        document.getElementById('s-rPrim').textContent  = fmt(parcelas[0].parcela);
+        document.getElementById('s-rUlt').textContent   = fmt(parcelas[parcelas.length-1].parcela);
+        document.getElementById('s-rJuros').textContent = fmt(totalJ);
+        document.getElementById('s-tBem').textContent   = fmt(bem);
+        document.getElementById('s-tEntrada').textContent = fmt(ent);
+        document.getElementById('s-tJuros').textContent = fmt(totalJ);
+        document.getElementById('s-tTotal').textContent = fmt(ent+totalPago);
+        document.getElementById('s-btnTab').style.display = 'inline-block';
+        document.getElementById('s-share').style.display  = 'inline-flex';
+
+        const tbody = document.getElementById('s-tabBody');
+        tbody.innerHTML = '';
+        parcelas.forEach(p=>{
+            const tr = document.createElement('tr');
+            tr.innerHTML = `<td>${p.n}</td><td>${fmt(p.parcela)}</td><td>${fmt(p.amort)}</td><td>${fmt(p.juros)}</td><td>${fmt(p.saldo)}</td>`;
+            tbody.appendChild(tr);
+        });
+    }
+
+    function toggleTabela(){
+        sTabAberta = !sTabAberta;
+        document.getElementById('s-tabWrap').style.display = sTabAberta ? 'block' : 'none';
+        document.getElementById('s-btnTab').textContent = sTabAberta ? '🔼 Ocultar tabela' : '📋 Ver tabela de parcelas';
+    }
+
+    function compartilharSimular(){
+        const t = `🏦 Simulei meu financiamento no Calcula Fácil!\n\n💳 1ª Parcela: ${document.getElementById('s-rPrim').textContent}\n💸 Total de Juros: ${document.getElementById('s-rJuros').textContent}\n💰 Total a Pagar: ${document.getElementById('s-tTotal').textContent}\n\nSimule: util.com.br/financas/`;
+        navigator.share ? navigator.share({title:'Financiamento',text:t}) : navigator.clipboard.writeText(t).then(()=>alert('Copiado!'));
+    }
+
+    function calcularDescobrir(){
+        const bem     = parseFloat(document.getElementById('d-bem').value)||0;
+        const entrada = parseFloat(document.getElementById('d-entrada').value)||0;
+        const parcela = parseFloat(document.getElementById('d-parcela').value)||0;
+        const n       = parseInt(document.getElementById('d-prazo').value)||0;
+
+        if(!bem || !parcela || !n){ alert('Preencha: valor do bem, valor da parcela e número de parcelas.'); return; }
+        const fin = bem - entrada;
+        if(fin <= 0){ alert('O valor financiado deve ser maior que zero.'); return; }
+        if(parcela <= fin/n){ alert('A parcela informada é menor que a amortização pura. Verifique os valores.'); return; }
+
+        // Newton-Raphson para encontrar taxa (sistema Price)
+        let taxa = 0.02;
+        for(let i=0;i<2000;i++){
+            const pot = Math.pow(1+taxa,n);
+            const f   = fin*(taxa*pot)/(pot-1) - parcela;
+            const df  = fin*(pot*(1+taxa*n-taxa)-1)/Math.pow(pot-1,2);
+            const nova = taxa - f/df;
+            if(Math.abs(nova-taxa)<1e-12) break;
+            taxa = nova;
+        }
+
+        if(taxa<0||taxa>2){ alert('Não foi possível calcular. Verifique se os valores fazem sentido.'); return; }
+
+        const taxaMes  = taxa*100;
+        const taxaAno  = (Math.pow(1+taxa,12)-1)*100;
+        const totalPago = parcela*n;
+        const totalJ    = totalPago-fin;
+
+        document.getElementById('d-rFin').textContent     = fmt(fin);
+        document.getElementById('d-rTaxaMes').textContent = fmtPct(taxaMes);
+        document.getElementById('d-rTaxaAno').textContent = taxaAno.toFixed(2).replace('.',',')+'% a.a.';
+        document.getElementById('d-rJuros').textContent   = fmt(totalJ);
+        document.getElementById('d-tBem').textContent     = fmt(bem);
+        document.getElementById('d-tEntrada').textContent = fmt(entrada);
+        document.getElementById('d-tFin').textContent     = fmt(fin);
+        document.getElementById('d-tParcelas').textContent= fmt(totalPago)+` (${n}x ${fmt(parcela)})`;
+        document.getElementById('d-tJuros').textContent   = fmt(totalJ);
+        document.getElementById('d-tTotal').textContent   = fmt(entrada+totalPago);
+        document.getElementById('d-totalBox').style.display = 'block';
+        document.getElementById('d-share').style.display   = 'inline-flex';
+
+        const alerta = document.getElementById('d-alerta');
+        alerta.style.display = 'block';
+        if(taxaMes > 3){
+            alerta.className = 'alerta-box ruim';
+            alerta.innerHTML = `⚠️ <strong>Taxa alta!</strong> Você paga ${fmtPct(taxaMes)} ao mês (${taxaAno.toFixed(1).replace('.',',')}% ao ano). Vale considerar renegociar ou quitar antecipadamente — pode gerar economia significativa.`;
+        } else if(taxaMes > 1.5){
+            alerta.className = 'alerta-box medio';
+            alerta.innerHTML = `ℹ️ <strong>Taxa moderada.</strong> Você paga ${fmtPct(taxaMes)} ao mês. Compare com outras instituições — pode haver opções mais baratas ou desconto por quitação antecipada.`;
+        } else {
+            alerta.className = 'alerta-box ok';
+            alerta.innerHTML = `✅ <strong>Taxa dentro do esperado.</strong> ${fmtPct(taxaMes)} ao mês é razoável para esse tipo de financiamento. Continue em dia com as parcelas para evitar multas.`;
+        }
+    }
+
+    function compartilharDescobrir(){
+        const t = `🔍 Descobri a taxa do meu financiamento!\n\n📊 Taxa Mensal: ${document.getElementById('d-rTaxaMes').textContent}\n📈 Taxa Anual: ${document.getElementById('d-rTaxaAno').textContent}\n💸 Total de Juros: ${document.getElementById('d-rJuros').textContent}\n💰 Custo Total: ${document.getElementById('d-tTotal').textContent}\n\nDescubra a sua: util.com.br/financas/`;
+        navigator.share ? navigator.share({title:'Minha Taxa',text:t}) : navigator.clipboard.writeText(t).then(()=>alert('Copiado!'));
+    }
+</script>
+</body>
+</html>

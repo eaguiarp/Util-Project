@@ -1,0 +1,213 @@
+
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',sans-serif;background:#f0f2f5;color:#333;padding:2rem 1rem}
+.container{max-width:850px;margin:0 auto;background:white;border-radius:15px;box-shadow:0 4px 6px rgba(0,0,0,0.1);padding:2rem}
+.header{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px}
+h1{font-size:24px;color:#1a73e8;margin-bottom:0.25rem}
+.subtitle{font-size:14px;color:#666;margin-bottom:1.5rem}
+.section-title{font-size:12px;font-weight:bold;color:#1a73e8;text-transform:uppercase;letter-spacing:0.06em;margin:1.5rem 0 1rem;border-bottom:2px solid #e8f0fe;padding-bottom:5px}
+.row{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:15px;margin-bottom:15px}
+.field{display:flex;flex-direction:column;gap:5px}
+.field label{font-size:13px;color:#555;font-weight:500}
+.field input,.field select{padding:10px;border:1px solid #ccc;border-radius:8px;font-size:14px;color:#333;background:#fff;outline:none;transition:all 0.2s}
+.field input:focus,.field select:focus{border-color:#1a73e8;box-shadow:0 0 0 3px #e8f0fe}
+.btn{background:#1a73e8;color:white;border:none;border-radius:8px;padding:12px 24px;font-size:15px;font-weight:bold;cursor:pointer;transition:background 0.2s,transform 0.1s;display:inline-flex;align-items:center;justify-content:center;gap:8px;width:100%}
+.btn:hover{background:#1557b0}
+.btn:active{transform:scale(0.98)}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:15px;margin:1rem 0}
+.card{background:white;border-radius:12px;padding:1rem;box-shadow:0 2px 4px rgba(0,0,0,0.05);border:1px solid #e8f0fe}
+.card-label{font-size:12px;color:#666;margin-bottom:5px;font-weight:500}
+.card-value{font-size:22px;font-weight:bold;color:#1a73e8}
+.result-box{border-radius:12px;padding:20px;margin-top:20px;display:none}
+.imc-bar-wrap{background:#f0f2f5;border-radius:50px;height:14px;margin:12px 0 4px;overflow:hidden;position:relative}
+.imc-bar{height:100%;border-radius:50px;background:linear-gradient(to right,#4fc3f7,#81c784,#ffb74d,#e57373);width:100%}
+.imc-pointer{position:absolute;top:-4px;width:22px;height:22px;border-radius:50%;border:3px solid white;box-shadow:0 1px 4px rgba(0,0,0,0.2);transform:translateX(-50%);transition:left 0.6s ease}
+.imc-labels{display:flex;justify-content:space-between;font-size:11px;color:#888;margin-bottom:8px}
+.dica-box{margin-top:16px;background:#f8f9ff;border-radius:10px;padding:14px 16px;border-left:4px solid #1a73e8}
+.dica-box p{font-size:14px;color:#444;line-height:1.6}
+.tabela-wrap{overflow-x:auto;margin-top:20px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{text-align:left;color:#1a73e8;background:#e8f0fe;font-weight:600;padding:8px 10px;font-size:12px;text-transform:uppercase}
+th:first-child{border-radius:8px 0 0 8px}
+th:last-child{border-radius:0 8px 8px 0}
+td{padding:7px 10px;border-bottom:1px solid #eee;color:#555}
+tr.ativo td{background:#e8f0fe;font-weight:bold;color:#1a73e8}
+.footer-note{margin-top:1.5rem;font-size:12px;color:#888;line-height:1.6;text-align:center}
+@keyframes fadeIn{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
+</style>
+
+<div class="container">
+  <div class="header">
+    <h1>Calculadora de IMC</h1>
+    <a href="/" style="color:#1a73e8;text-decoration:none;font-size:14px;font-weight:bold">← Voltar ao Menu</a>
+  </div>
+  <p class="subtitle">Preencha seus dados e clique em calcular para ver o resultado.</p>
+
+  <p class="section-title">Seus dados</p>
+  <div class="row">
+    <div class="field">
+      <label>Peso (kg)</label>
+      <input type="number" id="peso" placeholder="Ex: 75" min="20" max="300" step="0.1">
+    </div>
+    <div class="field">
+      <label>Altura (cm)</label>
+      <input type="number" id="altura" placeholder="Ex: 170" min="100" max="250">
+    </div>
+    <div class="field">
+      <label>Sexo</label>
+      <select id="sexo">
+        <option value="n">Prefiro não informar</option>
+        <option value="f">Feminino</option>
+        <option value="m">Masculino</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Idade</label>
+      <input type="number" id="idade" placeholder="Ex: 30" min="18" max="100">
+    </div>
+  </div>
+
+  <div style="margin-bottom:20px">
+    <button class="btn" onclick="calcularIMC()">Calcular IMC</button>
+  </div>
+
+  <div id="resultado" class="result-box" style="animation:fadeIn 0.4s">
+    <p class="section-title">Seu resultado</p>
+    <div class="cards">
+      <div class="card">
+        <div class="card-label">Seu IMC</div>
+        <div class="card-value" id="valorIMC">—</div>
+      </div>
+      <div class="card">
+        <div class="card-label">Classificação</div>
+        <div class="card-value" id="classIMC" style="font-size:16px;padding-top:4px">—</div>
+      </div>
+      <div class="card">
+        <div class="card-label">Faixa saudável</div>
+        <div class="card-value" id="faixaSaudavel" style="font-size:15px;padding-top:4px">—</div>
+      </div>
+    </div>
+
+    <div style="margin-top:16px">
+      <div class="imc-labels">
+        <span>Abaixo do peso</span>
+        <span>Saudável</span>
+        <span>Sobrepeso</span>
+        <span>Obesidade</span>
+      </div>
+      <div class="imc-bar-wrap">
+        <div class="imc-bar"></div>
+        <div class="imc-pointer" id="ponteiro" style="left:0%"></div>
+      </div>
+      <div class="imc-labels" style="margin-top:2px">
+        <span>16</span><span>18.5</span><span>25</span><span>30</span><span>40+</span>
+      </div>
+    </div>
+
+    <div class="dica-box" id="dicaBox">
+      <p id="dicaTexto"></p>
+    </div>
+
+    <p class="section-title" style="margin-top:1.5rem">Tabela de classificação</p>
+    <div class="tabela-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>IMC</th>
+            <th>Classificação</th>
+            <th>O que isso significa</th>
+          </tr>
+        </thead>
+        <tbody id="tabelaIMC"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <p class="footer-note">
+    O IMC é uma referência geral e não substitui a avaliação de um profissional de saúde.<br>
+    Fatores como massa muscular, genética e histórico familiar também fazem parte do quadro completo.
+  </p>
+</div>
+
+<script>
+const faixas = [
+  {min:0,   max:16,   label:'Magreza grave',    cor:'#4fc3f7', dica:'Seu peso está muito abaixo do recomendado. Buscar orientação médica ou nutricional é um passo importante para cuidar de você com segurança.'},
+  {min:16,  max:17,   label:'Magreza moderada', cor:'#4fc3f7', dica:'Seu peso está abaixo da faixa ideal. Um nutricionista pode ajudar a traçar um caminho leve e sustentável para o equilíbrio.'},
+  {min:17,  max:18.5, label:'Magreza leve',     cor:'#81c784', dica:'Você está um pouco abaixo do peso ideal. Pequenas mudanças na alimentação, com orientação, já podem fazer diferença.'},
+  {min:18.5,max:25,   label:'Peso saudável',    cor:'#66bb6a', dica:'Parabéns! Seu peso está dentro da faixa considerada saudável. Continue cuidando bem de você — alimentação variada e movimento fazem parte disso.'},
+  {min:25,  max:30,   label:'Sobrepeso',        cor:'#ffb74d', dica:'Você está um pouco acima da faixa ideal. Isso é muito comum e tem solução! Pequenos hábitos consistentes fazem uma grande diferença ao longo do tempo.'},
+  {min:30,  max:35,   label:'Obesidade grau I', cor:'#ff8a65', dica:'Seu peso merece atenção. Procurar um profissional de saúde pode abrir caminhos mais seguros e personalizados para você.'},
+  {min:35,  max:40,   label:'Obesidade grau II',cor:'#e57373', dica:'É importante contar com apoio médico. Cada pessoa é única, e há tratamentos eficazes e acolhedores disponíveis para essa situação.'},
+  {min:40,  max:999,  label:'Obesidade grau III',cor:'#ef5350',dica:'Seu corpo está pedindo atenção especial. Acompanhamento médico contínuo é fundamental — e você merece todo o suporte para ter mais saúde e bem-estar.'}
+];
+
+const descricoes = [
+  'Peso muito abaixo do ideal — atenção à nutrição.',
+  'Peso abaixo do ideal — vale buscar orientação.',
+  'Levemente abaixo — pequenos ajustes resolvem.',
+  'Ótimo! Você está dentro da faixa recomendada.',
+  'Um pouco acima — hábitos simples já ajudam muito.',
+  'Recomenda-se acompanhamento profissional.',
+  'Acompanhamento médico é importante aqui.',
+  'Apoio médico especializado é fundamental.'
+];
+
+function calcularIMC(){
+  const peso = parseFloat(document.getElementById('peso').value);
+  const altCm = parseFloat(document.getElementById('altura').value);
+  const idade = parseInt(document.getElementById('idade').value) || 0;
+  const sexo = document.getElementById('sexo').value;
+
+  if(!peso || !altCm || peso < 20 || altCm < 100){
+    alert('Por favor, preencha o peso e a altura corretamente.');
+    return;
+  }
+
+  const alt = altCm / 100;
+  const imc = peso / (alt * alt);
+  const imcF = imc.toFixed(1);
+
+  const faixa = faixas.find(f => imc >= f.min && imc < f.max) || faixas[faixas.length-1];
+
+  // peso min/max saudável
+  const pMin = (18.5 * alt * alt).toFixed(1);
+  const pMax = (24.9 * alt * alt).toFixed(1);
+
+  document.getElementById('valorIMC').textContent = imcF;
+  document.getElementById('classIMC').textContent = faixa.label;
+  document.getElementById('classIMC').style.color = faixa.cor;
+  document.getElementById('faixaSaudavel').textContent = pMin + ' – ' + pMax + ' kg';
+
+  // ponteiro
+  const pct = Math.min(Math.max((imc - 16) / (40 - 16) * 100, 2), 98);
+  document.getElementById('ponteiro').style.left = pct + '%';
+  document.getElementById('ponteiro').style.background = faixa.cor;
+
+  // dica extra por sexo/idade
+  let dicaExtra = '';
+  if(sexo === 'f' && imc >= 25 && imc < 30) dicaExtra = ' Vale lembrar que mulheres têm composição corporal diferente e isso é natural.';
+  if(sexo === 'm' && imc >= 25 && imc < 28) dicaExtra = ' Homens com boa massa muscular podem ter IMC mais alto sem risco.';
+  if(idade > 60 && imc >= 22 && imc < 27) dicaExtra = ' Para pessoas acima de 60 anos, essa faixa é frequentemente considerada ideal.';
+
+  document.getElementById('dicaTexto').textContent = faixa.dica + dicaExtra;
+  document.getElementById('dicaBox').style.borderColor = faixa.cor;
+
+  // tabela
+  const tbody = document.getElementById('tabelaIMC');
+  tbody.innerHTML = '';
+  faixas.forEach((f,i) => {
+    const tr = document.createElement('tr');
+    const faixaStr = f.max >= 999 ? '≥ 40' : f.min + ' – ' + f.max;
+    tr.innerHTML = `<td style="font-weight:600;color:${f.cor}">${faixaStr}</td><td>${f.label}</td><td style="font-size:12px">${descricoes[i]}</td>`;
+    if(imc >= f.min && imc < f.max) tr.classList.add('ativo');
+    tbody.appendChild(tr);
+  });
+
+  const res = document.getElementById('resultado');
+  res.style.display = 'block';
+  res.style.animation = 'fadeIn 0.4s';
+}
+
+document.addEventListener('keydown', e => { if(e.key === 'Enter') calcularIMC(); });
+</script>

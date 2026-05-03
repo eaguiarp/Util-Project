@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Calculadora de Horas - Util</title>
+    <style>
+        body { font-family: sans-serif; display: flex; justify-content: center; padding: 50px; background: #eee; }
+        .box { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
+        input { padding: 10px; margin: 5px; border: 1px solid #ccc; border-radius: 4px; }
+        button { padding: 10px 20px; background: #28a745; color: white; border: none; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <div class="box">
+        <h3>Calculadora de Horas</h3>
+        <input type="time" id="inicio">
+        <input type="time" id="fim">
+        <button onclick="calcular()">Calcular</button>
+        <p id="resultado"></p>
+    </div>
+
+    <script>
+        function calcular() {
+            const start = document.getElementById('inicio').value;
+            const end = document.getElementById('fim').value;
+            if(!start || !end) return alert("Preencha os campos");
+            
+            // Aqui você pode fazer um fetch para sua API do backend futuramente
+            // Por enquanto, um cálculo simples local:
+            const s = start.split(':');
+            const e = end.split(':');
+            const min = (e[0]*60 + parseInt(e[1])) - (s[0]*60 + parseInt(s[1]));
+            const h = Math.floor(min/60);
+            const m = min % 60;
+            document.getElementById('resultado').innerText = `Total: ${h}h ${m}m`;
+        }
+    </script>
+</body>
+</html>
+

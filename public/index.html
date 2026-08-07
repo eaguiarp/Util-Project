@@ -43,6 +43,7 @@
   <div class="tab" onclick="mostrarPainel('texto', event)">📝 Post de Texto</div>
   <div class="tab" onclick="mostrarPainel('curadoria', event)">🔎 Curadoria</div>
   <div class="tab" onclick="mostrarPainel('lista', event)">📋 Minha Lista</div>
+  <div class="tab" onclick="mostrarPainel('encurtador', event)">🔗 Encurtador</div>
 </div>
 
 <!-- ABA: POSTAGEM RÁPIDA -->
@@ -113,6 +114,15 @@
 
   <button onclick="adicionarManual()">Adicionar à fila de curadoria</button>
   <div id="l-resultado"></div>
+</div>
+
+<!-- ABA: ENCURTADOR -->
+<div id="painel-encurtador" class="painel">
+  <label>Cole o link de afiliado (ou qualquer link longo)</label>
+  <input id="e-url" placeholder="https://www.amazon.com.br/dp/...?tag=zinhalivros-20">
+
+  <button onclick="encurtarLink()">Gerar link curto</button>
+  <div id="e-resultado"></div>
 </div>
 
 <script>
@@ -204,6 +214,29 @@ async function enviarTexto() {
     resDiv.className = 'resultado ok';
     resDiv.textContent = '✅ Postado com sucesso!';
     document.getElementById('t-texto').value = '';
+  } else {
+    resDiv.className = 'resultado erro';
+    resDiv.textContent = '❌ Erro: ' + data.erro;
+  }
+}
+
+// ---------- ENCURTADOR ----------
+async function encurtarLink() {
+  const url = document.getElementById('e-url').value;
+  const resDiv = document.getElementById('e-resultado');
+  resDiv.textContent = 'Gerando...';
+  resDiv.className = 'resultado';
+
+  const resp = await fetch('/api/encurtar', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ url })
+  });
+  const data = await resp.json();
+
+  if (data.ok) {
+    resDiv.className = 'resultado ok';
+    resDiv.innerHTML = '✅ Link curto gerado:<br><br><b>' + data.linkCurto + '</b>';
   } else {
     resDiv.className = 'resultado erro';
     resDiv.textContent = '❌ Erro: ' + data.erro;

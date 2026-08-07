@@ -23,7 +23,7 @@ function exigirLogin(req, res, next) {
   if (req.cookies.painel_auth === TOKEN_VALIDO) {
     return next();
   }
-  if (req.path === '/login.html' || req.path === '/api/login') {
+  if (req.path === '/login.html' || req.path === '/api/login' || req.path.startsWith('/r/')) {
     return next();
   }
   if (req.path.startsWith('/api/')) {
@@ -108,6 +108,58 @@ app.post('/api/post-texto', async (req, res) => {
     res.json(resultado.ok ? { ok: true } : { ok: false, erro: resultado.description });
   } catch (err) {
     res.status(500).json({ ok: false, erro: err.message });
+  }
+});
+
+// Gera um código curto aleatório (6 caracteres)
+function gerarCodigo() {
+  return crypto.randomBytes(4).toString('base64url').slice(0, 6);
+}
+
+// Cria um link curto a partir de uma URL longa
+app.post('/api/encurtar', async (req, res) => {
+  try {
+    const { url } = req.body;
+    if (!url || !url.trim()) {
+      return res.status(400).json({ ok: false, erro: 'URL é obrigatória.' });
+    }
+
+    let codigo = gerarCodigo();
+    let existe = await pool.query('SELECT codigo FROM links_curtos WHERE codigo = $1', [codigo]);
+    while (existe.rows.length > 0) {
+      codigo = gerarCodigo();
+      existe = await pool.query('SELECT codigo FROM links_curtos WHERE codigo = $1', [codigo]);
+    }
+
+    await pool.query(
+      'INSERT INTO links_curtos (codigo, url_destino) VALUES ($1, $2)',
+      [codigo, url.trim()]
+    );
+
+    const linkCurto = `${req.protocol}://${req.get('host')}/r/${codigo}`;
+    res.json({ ok: true, linkCurto });
+  } catch (err) {
+    res.status(500).json({ ok: false, erro: err.message });
+  }
+});
+
+// Redireciona quem clica no link curto (rota pública, sem exigir login)
+app.get('/r/:codigo', async (req, res) => {
+  try {
+    const result = await pool.query(
+      'SELECT url_destino FROM links_curtos WHERE codigo = $1',
+      [req.params.codigo]
+    );
+    if (result.rows.length === 0) {
+      return res.status(404).send('Link não encontrado.');
+    }
+    await pool.query(
+      'UPDATE links_curtos SET cliques = cliques + 1 WHERE codigo = $1',
+      [req.params.codigo]
+    );
+    res.redirect(result.rows[0].url_destino);
+  } catch (err) {
+    res.status(500).send('Erro ao redirecionar.');
   }
 });
 

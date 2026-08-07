@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Login — Painel Zinha Livros</title>
+<style>
+  body { font-family: system-ui, sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; background: #f5f5f7; }
+  .box { background: white; padding: 30px; border-radius: 10px; width: 280px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+  h1 { font-size: 18px; margin-top: 0; }
+  input { width: 100%; padding: 10px; margin-top: 8px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; }
+  button { width: 100%; margin-top: 14px; padding: 10px; background: #5B2A86; color: white; border: none; border-radius: 6px; cursor: pointer; }
+  .erro { color: #B00020; font-size: 13px; margin-top: 8px; }
+</style>
+</head>
+<body>
+<div class="box">
+  <h1>📚 Painel Zinha Livros</h1>
+  <input type="password" id="senha" placeholder="Senha" onkeydown="if(event.key==='Enter') entrar()">
+  <button onclick="entrar()">Entrar</button>
+  <div id="erro" class="erro"></div>
+</div>
+<script>
+async function entrar() {
+  const senha = document.getElementById('senha').value;
+  const resp = await fetch('/api/login', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ senha })
+  });
+  const data = await resp.json();
+  if (data.ok) {
+    window.location.href = '/';
+  } else {
+    document.getElementById('erro').textContent = 'Senha incorreta.';
+  }
+}
+</script>
+</body>
+</html>

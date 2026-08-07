@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Painel Zinha Livros</title>
+<style>
+  body { font-family: system-ui, sans-serif; max-width: 700px; margin: 40px auto; padding: 0 20px; background: #f5f5f7; }
+  h1 { font-size: 20px; }
+  .tabs { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
+  .tab { padding: 8px 16px; background: #e0e0e5; border-radius: 6px; cursor: pointer; font-size: 14px; }
+  .tab.ativa { background: #5B2A86; color: white; }
+  .painel { display: none; background: white; padding: 20px; border-radius: 8px; }
+  .painel.ativo { display: block; }
+  label { display: block; margin-top: 12px; font-size: 13px; color: #444; }
+  input, textarea { width: 100%; padding: 8px; margin-top: 4px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; font-family: inherit; }
+  textarea { min-height: 100px; }
+  button { margin-top: 16px; padding: 10px 20px; background: #5B2A86; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; }
+  button.secundario { background: #999; }
+  button.pequeno { padding: 6px 12px; font-size: 13px; margin-top: 0; }
+  .resultado { margin-top: 12px; padding: 10px; border-radius: 6px; font-size: 14px; white-space: pre-wrap; }
+  .ok { background: #E4F5EC; color: #1E7A4C; }
+  .erro { background: #FDECEC; color: #B00020; }
+  .checkbox { display: flex; align-items: center; gap: 8px; margin-top: 12px; }
+  .checkbox input { width: auto; }
+
+  .item-pendente { border: 1px solid #e0e0e5; border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+  .item-pendente h3 { margin: 0 0 4px 0; font-size: 16px; }
+  .item-pendente .autor { font-size: 13px; color: #666; margin-bottom: 8px; }
+  .item-pendente .sinopse { font-size: 13px; color: #444; margin-bottom: 12px; line-height: 1.4; }
+  .item-pendente .acoes { display: flex; gap: 8px; margin-top: 12px; }
+  .item-pendente .form-curadoria { display: none; margin-top: 12px; border-top: 1px solid #eee; padding-top: 12px; }
+  .item-pendente .form-curadoria.aberto { display: block; }
+  .vazio { text-align: center; color: #888; padding: 30px 0; }
+  .contador { font-size: 13px; color: #666; margin-bottom: 12px; }
+</style>
+</head>
+<body>
+
+<h1>📚 Painel Zinha Livros</h1>
+
+<div class="tabs">
+  <div class="tab ativa" onclick="mostrarPainel('rapido', event)">⚡ Postagem Rápida</div>
+  <div class="tab" onclick="mostrarPainel('texto', event)">📝 Post de Texto</div>
+  <div class="tab" onclick="mostrarPainel('curadoria', event)">🔎 Curadoria</div>
+  <div class="tab" onclick="mostrarPainel('lista', event)">📋 Minha Lista</div>
+</div>
+
+<!-- ABA: POSTAGEM RÁPIDA -->
+<div id="painel-rapido" class="painel ativo">
+  <label>Link do produto na Amazon</label>
+  <input id="r-link" placeholder="https://www.amazon.com.br/dp/...">
+
+  <label>Título</label>
+  <input id="r-titulo" placeholder="Nome do livro">
+
+  <div class="checkbox">
+    <input type="checkbox" id="r-ku">
+    <label style="margin:0">Grátis no Kindle Unlimited</label>
+  </div>
+
+  <label>Físico "De" (opcional)</label>
+  <input id="r-de" placeholder="Ex: 59,90">
+
+  <label>Físico "Por"</label>
+  <input id="r-por" placeholder="Ex: 39,90">
+
+  <label>Kindle (opcional)</label>
+  <input id="r-kindle" placeholder="Ex: 19,90">
+
+  <label>Promoção Amazon % (opcional)</label>
+  <input id="r-promo" placeholder="Ex: 20">
+
+  <label>Código do cupom (opcional, se houver)</label>
+  <input id="r-codigo" placeholder="Deixe vazio se for automático">
+
+  <button onclick="enviarRapido()">Postar no canal</button>
+  <div id="r-resultado"></div>
+</div>
+
+<!-- ABA: POST DE TEXTO -->
+<div id="painel-texto" class="painel">
+  <label>Mensagem (aceita Markdown: *negrito*, _itálico_)</label>
+  <textarea id="t-texto" placeholder="Digite o aviso/anúncio..."></textarea>
+  <button onclick="enviarTexto()">Postar no canal</button>
+  <div id="t-resultado"></div>
+</div>
+
+<!-- ABA: CURADORIA -->
+<div id="painel-curadoria" class="painel">
+  <button onclick="rodarDescoberta()">🔎 Buscar novos livros</button>
+  <button class="secundario" onclick="testarAgendamento()">⏰ Testar postagem agora</button>
+  <div id="c-resultado-busca"></div>
+
+  <div class="contador" id="c-contador"></div>
+  <div id="c-lista"></div>
+</div>
+
+<!-- ABA: MINHA LISTA -->
+<div id="painel-lista" class="painel">
+  <p style="font-size:13px;color:#666;margin-top:0;">
+    Adicione livros que você já conhece/escolheu diretamente, sem depender da busca automática.
+    Eles entram na fila de Curadoria pra você completar link e preço depois.
+  </p>
+
+  <label>Título</label>
+  <input id="l-titulo" placeholder="Nome do livro">
+
+  <label>Autor (opcional)</label>
+  <input id="l-autor" placeholder="Nome do autor">
+
+  <label>Sinopse (opcional — se deixar em branco, você escreve na hora da curadoria)</label>
+  <textarea id="l-sinopse" placeholder="Breve descrição do livro..."></textarea>
+
+  <button onclick="adicionarManual()">Adicionar à fila de curadoria</button>
+  <div id="l-resultado"></div>
+</div>
+
+<script>
+function mostrarPainel(nome, ev) {
+  document.querySelectorAll('.painel').forEach(p => p.classList.remove('ativo'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('ativa'));
+  document.getElementById('painel-' + nome).classList.add('ativo');
+  ev.target.classList.add('ativa');
+  if (nome === 'curadoria') carregarPendentes();
+}
+
+async function adicionarManual() {
+  const body = {
+    titulo: document.getElementById('l-titulo').value,
+    autor: document.getElementById('l-autor').value,
+    sinopse: document.getElementById('l-sinopse').value
+  };
+
+  const resDiv = document.getElementById('l-resultado');
+  resDiv.textContent = 'Adicionando...';
+  resDiv.className = 'resultado';
+
+  const resp = await fetch('/api/adicionar-manual', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  });
+  const data = await resp.json();
+
+  if (data.ok) {
+    resDiv.className = 'resultado ok';
+    resDiv.textContent = '✅ Adicionado! Vá até a aba Curadoria pra completar link e preço.';
+    document.getElementById('l-titulo').value = '';
+    document.getElementById('l-autor').value = '';
+    document.getElementById('l-sinopse').value = '';
+  } else {
+    resDiv.className = 'resultado erro';
+    resDiv.textContent = '❌ Erro: ' + data.erro;
+  }
+}
+
+// ---------- POSTAGEM RÁPIDA ----------
+async function enviarRapido() {
+  const body = {
+    link: document.getElementById('r-link').value,
+    titulo: document.getElementById('r-titulo').value,
+    ehKU: document.getElementById('r-ku').checked,
+    precoFisicoDe: document.getElementById('r-de').value,
+    precoFisicoPor: document.getElementById('r-por').value,
+    precoKindle: document.getElementById('r-kindle').value,
+    percentualPromo: document.getElementById('r-promo').value,
+    codigoCupom: document.getElementById('r-codigo').value
+  };
+  const resDiv = document.getElementById('r-resultado');
+  resDiv.textContent = 'Enviando...';
+  resDiv.className = 'resultado';
+
+  const resp = await fetch('/api/postar-rapido', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  });
+  const data = await resp.json();
+
+  if (data.ok) {
+    resDiv.className = 'resultado ok';
+    resDiv.textContent = '✅ Postado com sucesso!\n\n' + data.mensagem;
+  } else {
+    resDiv.className = 'resultado erro';
+    resDiv.textContent = '❌ Erro: ' + data.erro;
+  }
+}
+
+// ---------- POST DE TEXTO ----------
+async function enviarTexto() {
+  const texto = document.getElementById('t-texto').value;
+  const resDiv = document.getElementById('t-resultado');
+  resDiv.textContent = 'Enviando...';
+  resDiv.className = 'resultado';
+
+  const resp = await fetch('/api/post-texto', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ texto })
+  });
+  const data = await resp.json();
+
+  if (data.ok) {
+    resDiv.className = 'resultado ok';
+    resDiv.textContent = '✅ Postado com sucesso!';
+    document.getElementById('t-texto').value = '';
+  } else {
+    resDiv.className = 'resultado erro';
+    resDiv.textContent = '❌ Erro: ' + data.erro;
+  }
+}
+
+// ---------- CURADORIA ----------
+async function rodarDescoberta() {
+  const div = document.getElementById('c-resultado-busca');
+  div.textContent = '🔎 Buscando... (pode levar alguns segundos)';
+  div.className = 'resultado';
+
+  const resp = await fetch('/api/descobrir', { method: 'POST' });
+  const data = await resp.json();
+
+  if (data.ok) {
+    div.className = 'resultado ok';
+    div.textContent = `✅ ${data.novos} novos candidatos encontrados (de ${data.totalEncontrados} no total buscado).`;
+    carregarPendentes();
+  } else {
+    div.className = 'resultado erro';
+    div.textContent = '❌ Erro: ' + data.erro;
+  }
+}
+
+async function carregarPendentes() {
+  const resp = await fetch('/api/pendentes');
+  const data = await resp.json();
+  const lista = document.getElementById('c-lista');
+  const contador = document.getElementById('c-contador');
+
+  if (!data.ok || data.itens.length === 0) {
+    lista.innerHTML = '<div class="vazio">Nenhum item pendente. Clique em "Buscar novos livros".</div>';
+    contador.textContent = '';
+    return;
+  }
+
+  contador.textContent = `${data.itens.length} itens pendentes de curadoria`;
+
+  lista.innerHTML = data.itens.map(item => `
+    <div class="item-pendente" id="item-${item.id}">
+      <h3>📚 ${item.titulo}</h3>
+      <div class="autor">✍️ ${item.autor || '(autor não identificado)'} ${item.publicado_em ? '· ' + item.publicado_em : ''}</div>
+      <div class="sinopse">${item.sinopse}</div>
+      <div class="acoes">
+        <button class="pequeno" onclick="abrirForm(${item.id})">✅ Usar este livro</button>
+        <button class="pequeno secundario" onclick="descartar(${item.id})">❌ Descartar</button>
+      </div>
+      <div class="form-curadoria" id="form-${item.id}">
+        <label>Link do produto na Amazon</label>
+        <input id="link-${item.id}" placeholder="https://www.amazon.com.br/dp/...">
+
+        <div class="checkbox">
+          <input type="checkbox" id="ku-${item.id}">
+          <label style="margin:0">Grátis no Kindle Unlimited</label>
+        </div>
+
+        <label>Físico "De" (opcional)</label>
+        <input id="de-${item.id}" placeholder="Ex: 59,90">
+
+        <label>Físico "Por"</label>
+        <input id="por-${item.id}" placeholder="Ex: 39,90">
+
+        <label>Kindle (opcional)</label>
+        <input id="kindle-${item.id}" placeholder="Ex: 19,90">
+
+        <label>Promoção Amazon % (opcional)</label>
+        <input id="promo-${item.id}" placeholder="Ex: 20">
+
+        <label>Código do cupom (opcional)</label>
+        <input id="codigo-${item.id}" placeholder="Deixe vazio se for automático">
+
+        <button onclick="confirmarCuradoria(${item.id})">Adicionar à fila e postar</button>
+        <div id="resultado-${item.id}"></div>
+      </div>
+    </div>
+  `).join('');
+}
+
+async function testarAgendamento() {
+  const div = document.getElementById('c-resultado-busca');
+  div.textContent = '⏰ Postando o próximo item pronto da fila...';
+  div.className = 'resultado';
+
+  const resp = await fetch('/api/testar-agendamento', { method: 'POST' });
+  const data = await resp.json();
+
+  if (data.ok) {
+    div.className = 'resultado ok';
+    div.textContent = '✅ ' + data.mensagem;
+  } else {
+    div.className = 'resultado erro';
+    div.textContent = '❌ Erro: ' + data.erro;
+  }
+}
+
+function abrirForm(id) {
+  document.getElementById('form-' + id).classList.toggle('aberto');
+}
+
+async function descartar(id) {
+  await fetch('/api/descartar/' + id, { method: 'POST' });
+  document.getElementById('item-' + id).remove();
+}
+
+async function confirmarCuradoria(id) {
+  const body = {
+    link: document.getElementById('link-' + id).value,
+    ehKU: document.getElementById('ku-' + id).checked,
+    precoFisicoDe: document.getElementById('de-' + id).value,
+    precoFisicoPor: document.getElementById('por-' + id).value,
+    precoKindle: document.getElementById('kindle-' + id).value,
+    percentualPromo: document.getElementById('promo-' + id).value,
+    codigoCupom: document.getElementById('codigo-' + id).value
+  };
+
+  const resDiv = document.getElementById('resultado-' + id);
+  resDiv.textContent = 'Salvando...';
+  resDiv.className = 'resultado';
+
+  const resp = await fetch('/api/preparar/' + id, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  });
+  const data = await resp.json();
+
+  if (data.ok) {
+    resDiv.className = 'resultado ok';
+    resDiv.textContent = '✅ Adicionado à fila de postagem!';
+    setTimeout(() => document.getElementById('item-' + id).remove(), 1500);
+  } else {
+    resDiv.className = 'resultado erro';
+    resDiv.textContent = '❌ Erro: ' + data.erro;
+  }
+}
+</script>
+
+</body>
+</html>

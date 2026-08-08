@@ -48,17 +48,17 @@ bot.on('message', async (msg) => {
   let asinEncontrado = null;
   let linkFinalParaPostar = null;
 
-  // Testa cada link encontrado na mensagem para ver qual é o da Amazon
+  // Testa cada link encontrado na mensagem
   for (const urlCandidata of urlsEncontradas) {
     const resultado = await resolverLink(urlCandidata);
-    if (resultado.asin) {
-      asinEncontrado = resultado.asin;
+    if (resultado.linkParaExibir) {
+      asinEncontrado = resultado.asin || 'PROMO';
       linkFinalParaPostar = resultado.linkParaExibir;
       break;
     }
   }
 
-  if (!asinEncontrado) {
+  if (!linkFinalParaPostar) {
     return bot.sendMessage(chatId, '⚠️ Nenhum link válido da Amazon foi identificado.');
   }
 

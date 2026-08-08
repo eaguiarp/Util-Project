@@ -172,6 +172,7 @@ async function enviarRapido() {
   const body = {
     link: document.getElementById('r-link').value,
     titulo: document.getElementById('r-titulo').value,
+    detalheDestaque: document.getElementById('r-destaque').value,
     ehKU: document.getElementById('r-ku').checked,
     precoFisicoDe: document.getElementById('r-de').value,
     precoFisicoPor: document.getElementById('r-por').value,
@@ -198,7 +199,6 @@ async function enviarRapido() {
     resDiv.textContent = '❌ Erro: ' + data.erro;
   }
 }
-
 // ---------- POST DE TEXTO ----------
 async function enviarTexto() {
   const texto = document.getElementById('t-texto').value;

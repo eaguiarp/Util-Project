@@ -1,6 +1,6 @@
 require('dotenv').config();
 const TelegramBot = require('node-telegram-bot-api');
-const { resolverLink } = require('./lib/asin');
+const { resolverLink, formatarLinkAfiliado } = require('./lib/asin');
 const { postarMensagem } = require('./lib/telegram');
 const { encurtarUrl } = require('./lib/encurtador');
 
@@ -63,8 +63,18 @@ bot.on('message', async (msg) => {
   }
 
   try {
-    const linkCurto = await encurtarUrl(linkFinalParaPostar);
+    const linkFinal = formatarLinkAfiliado(linkFinalParaPostar);
+    //const linkCurto = await encurtarUrl(linkFinal);
     
+    // Exemplo de envio no bot do Telegram:
+    // const linkFinal = formatarLinkAfiliado(linkOriginalDaLoja);
+    // bot.sendMessage(GRUPO_TRIAGEM_ID, `
+    // 📚 *${produto.titulo}*
+    // 💰 R$ ${produto.preco}
+    //
+    // 👉 [Ver Oferta na Loja](${linkFinal})
+    // `, { parse_mode: 'Markdown' });
+
     // Substitui todos os links antigos encontrados pelo mesmo link curto
     let textoZinha = texto;
     for (const urlCandidata of urlsEncontradas) {

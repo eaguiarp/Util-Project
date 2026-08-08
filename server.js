@@ -6,19 +6,17 @@ const path = require('path');
 const cookieParser = require('cookie-parser');
 const crypto = require('crypto');
 const { postarMensagem } = require('./lib/telegram');
-const { extrairASIN } = require('./lib/asin');
+const { resolverLink } = require('./lib/asin');
+const pool = require('./db');
+const { buscarCandidatos } = require('./lib/googlebooks');
 
-const TAG_AFILIADO = 'zinhalivros-20';
 const SENHA = process.env.PAINEL_SENHA;
-
-// Token simples derivado da senha, usado no cookie (evita guardar a senha crua no cookie)
 const TOKEN_VALIDO = crypto.createHash('sha256').update(SENHA || '').digest('hex');
 
 const app = express();
 app.use(express.json());
 app.use(cookieParser());
 
-// Middleware de autenticação — protege tudo, exceto login e arquivos estáticos do login
 function exigirLogin(req, res, next) {
   if (req.cookies.painel_auth === TOKEN_VALIDO) {
     return next();
@@ -35,13 +33,12 @@ function exigirLogin(req, res, next) {
 app.use(exigirLogin);
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Rota de login
 app.post('/api/login', (req, res) => {
   const { senha } = req.body;
   if (senha === SENHA) {
     res.cookie('painel_auth', TOKEN_VALIDO, {
       httpOnly: true,
-      maxAge: 30 * 24 * 60 * 60 * 1000, // 30 dias
+      maxAge: 30 * 24 * 60 * 60 * 1000,
       sameSite: 'lax'
     });
     return res.json({ ok: true });
@@ -49,26 +46,35 @@ app.post('/api/login', (req, res) => {
   res.status(401).json({ ok: false, erro: 'Senha incorreta.' });
 });
 
-// Rota: Postagem Rápida (livro com preço/promoção)
+// Rota: Postagem Rápida
 app.post('/api/postar-rapido', async (req, res) => {
   try {
     const { link, titulo, ehKU, precoFisicoDe, precoFisicoPor, precoKindle, percentualPromo, codigoCupom } = req.body;
 
-    const asin = extrairASIN(link);
+    const { asin, linkParaExibir } = await resolverLink(link);
     if (!asin) {
       return res.status(400).json({ ok: false, erro: 'ASIN não identificado no link.' });
     }
+    const linkAfiliado = linkParaExibir;
 
-    const linkAfiliado = `https://www.amazon.com.br/dp/${asin}?tag=${TAG_AFILIADO}`;
+    let chamada = '';
+    if (precoFisicoDe && precoFisicoPor) {
+      const de = parseFloat(precoFisicoDe.replace(',', '.'));
+      const por = parseFloat(precoFisicoPor.replace(',', '.'));
+      if (de > 0 && por > 0) {
+        const percentualOff = Math.round(((de - por) / de) * 100);
+        chamada = `🔥 *${percentualOff}% OFF* | `;
+      }
+    }
 
-    let mensagem = `📚 *${titulo}*\n\n`;
+    let mensagem = `${chamada}📚 *${titulo}*\n\n`;
     const linhasPreco = [];
 
     if (precoFisicoPor) {
-  let linha = `📕 Capa comum: *R$ ${precoFisicoPor}*`;
-  if (precoFisicoDe) linha += ` (de ~R$ ${precoFisicoDe}~)`;
-  linhasPreco.push(linha);
-}
+      let linha = `📕 Físico: *R$ ${precoFisicoPor}*`;
+      if (precoFisicoDe) linha += ` (de ~R$ ${precoFisicoDe}~)`;
+      linhasPreco.push(linha);
+    }
     if (precoKindle) {
       linhasPreco.push(`📱 Kindle: *R$ ${precoKindle}*`);
     }
@@ -88,7 +94,7 @@ app.post('/api/postar-rapido', async (req, res) => {
     }
 
     mensagem += linhasPreco.join('\n') + '\n';
-    mensagem += `\n🔗 ${linkAfiliado}\n\n_Link de afiliado — Zinha Livros participa do Programa de Associados da Amazon_`;
+    mensagem += `\n🔗 ${linkAfiliado}\n\n_Comprando por este link, você apoia o Zinha Livros sem pagar nada a mais! 💛_`;
 
     const resultado = await postarMensagem(mensagem);
     res.json(resultado.ok ? { ok: true, mensagem } : { ok: false, erro: resultado.description });
@@ -97,7 +103,7 @@ app.post('/api/postar-rapido', async (req, res) => {
   }
 });
 
-// Rota: Post de Texto (avisos avulsos)
+// Rota: Post de Texto
 app.post('/api/post-texto', async (req, res) => {
   try {
     const { texto } = req.body;
@@ -111,12 +117,11 @@ app.post('/api/post-texto', async (req, res) => {
   }
 });
 
-// Gera um código curto aleatório (6 caracteres)
+// Gera um código curto aleatório (ainda usado pela aba Encurtador manual)
 function gerarCodigo() {
   return crypto.randomBytes(4).toString('base64url').slice(0, 6);
 }
 
-// Cria um link curto a partir de uma URL longa
 app.post('/api/encurtar', async (req, res) => {
   try {
     const { url } = req.body;
@@ -143,7 +148,6 @@ app.post('/api/encurtar', async (req, res) => {
   }
 });
 
-// Redireciona quem clica no link curto (rota pública, sem exigir login)
 app.get('/r/:codigo', async (req, res) => {
   try {
     const result = await pool.query(
@@ -163,10 +167,6 @@ app.get('/r/:codigo', async (req, res) => {
   }
 });
 
-const pool = require('./db');
-const { buscarCandidatos } = require('./lib/googlebooks');
-
-// Roda a descoberta e salva candidatos novos no banco (evita duplicar por título)
 app.post('/api/descobrir', async (req, res) => {
   try {
     const candidatos = await buscarCandidatos();
@@ -193,9 +193,6 @@ app.post('/api/descobrir', async (req, res) => {
   }
 });
 
-// Lista itens pendentes de curadoria
-
-// Adiciona um livro manualmente à fila de curadoria (sem depender da busca automática)
 app.post('/api/adicionar-manual', async (req, res) => {
   try {
     const { titulo, autor, sinopse } = req.body;
@@ -229,7 +226,6 @@ app.get('/api/pendentes', async (req, res) => {
   }
 });
 
-// Descarta um item pendente
 app.post('/api/descartar/:id', async (req, res) => {
   try {
     await pool.query(`UPDATE ofertas SET status = 'descartado' WHERE id = $1`, [req.params.id]);
@@ -239,7 +235,7 @@ app.post('/api/descartar/:id', async (req, res) => {
   }
 });
 
-// Finaliza a curadoria de um item: monta a mensagem e marca como 'pronto'
+// Rota: finaliza a curadoria de um item
 app.post('/api/preparar/:id', async (req, res) => {
   try {
     const { link, ehKU, precoFisicoDe, precoFisicoPor, precoKindle, percentualPromo, codigoCupom } = req.body;
@@ -251,22 +247,31 @@ app.post('/api/preparar/:id', async (req, res) => {
     }
     const oferta = item.rows[0];
 
-    const asin = extrairASIN(link);
+    const { asin, linkParaExibir } = await resolverLink(link);
     if (!asin) {
       return res.status(400).json({ ok: false, erro: 'ASIN não identificado no link.' });
     }
+    const linkAfiliado = linkParaExibir;
 
-    const linkAfiliado = `https://www.amazon.com.br/dp/${asin}?tag=${TAG_AFILIADO}`;
+    let chamada = '';
+    if (precoFisicoDe && precoFisicoPor) {
+      const de = parseFloat(precoFisicoDe.replace(',', '.'));
+      const por = parseFloat(precoFisicoPor.replace(',', '.'));
+      if (de > 0 && por > 0) {
+        const percentualOff = Math.round(((de - por) / de) * 100);
+        chamada = `🔥 *${percentualOff}% OFF* | `;
+      }
+    }
 
-    let mensagem = `📚 *${oferta.titulo}*\n\n`;
+    let mensagem = `${chamada}📚 *${oferta.titulo}*\n\n`;
     mensagem += `${oferta.sinopse}\n\n`;
 
     const linhasPreco = [];
     if (precoFisicoPor) {
-  let linha = `📕 Capa comum: *R$ ${precoFisicoPor}*`;
-  if (precoFisicoDe) linha += ` (de ~R$ ${precoFisicoDe}~)`;
-  linhasPreco.push(linha);
-}
+      let linha = `📕 Físico: *R$ ${precoFisicoPor}*`;
+      if (precoFisicoDe) linha += ` (de ~R$ ${precoFisicoDe}~)`;
+      linhasPreco.push(linha);
+    }
     if (precoKindle) {
       linhasPreco.push(`📱 Kindle: *R$ ${precoKindle}*`);
     }
@@ -286,7 +291,7 @@ app.post('/api/preparar/:id', async (req, res) => {
     }
 
     mensagem += linhasPreco.join('\n') + '\n';
-    mensagem += `\n🔗 ${linkAfiliado}\n\n_Link de afiliado — Zinha Livros participa do Programa de Associados da Amazon_`;
+    mensagem += `\n🔗 ${linkAfiliado}\n\n_Comprando por este link, você apoia o Zinha Livros sem pagar nada a mais! 💛_`;
 
     await pool.query(
       `UPDATE ofertas SET asin = $1, link_afiliado = $2, mensagem = $3, status = 'pronto' WHERE id = $4`,
@@ -299,7 +304,6 @@ app.post('/api/preparar/:id', async (req, res) => {
   }
 });
 
-// Pega o próximo item 'pronto' no banco e posta no canal
 async function postarProximoDaFila() {
   const agora = new Date().toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' });
   try {
@@ -329,7 +333,6 @@ async function postarProximoDaFila() {
   }
 }
 
-// Horários fixos: 6h, 10h, 13h, 19h (horário de Brasília)
 cron.schedule('0 6 * * *', postarProximoDaFila, { timezone: 'America/Sao_Paulo' });
 cron.schedule('0 10 * * *', postarProximoDaFila, { timezone: 'America/Sao_Paulo' });
 cron.schedule('0 13 * * *', postarProximoDaFila, { timezone: 'America/Sao_Paulo' });

@@ -49,8 +49,7 @@ app.post('/api/login', (req, res) => {
 // Rota: Postagem Rápida
 app.post('/api/postar-rapido', async (req, res) => {
   try {
-    const { link, titulo, ehKU, precoFisicoDe, precoFisicoPor, precoKindle, percentualPromo, codigoCupom } = req.body;
-
+const { link, titulo, ehKU, precoFisicoDe, precoFisicoPor, precoKindle, percentualPromo, codigoCupom, detalheDestaque } = req.body;
     const { asin, linkParaExibir } = await resolverLink(link);
     if (!asin) {
       return res.status(400).json({ ok: false, erro: 'ASIN não identificado no link.' });
@@ -68,6 +67,10 @@ app.post('/api/postar-rapido', async (req, res) => {
     }
 
     let mensagem = `${chamada}📚 *${titulo}*\n\n`;
+if (detalheDestaque && detalheDestaque.trim()) {
+  mensagem += `💡 *Destaque:* ${detalheDestaque.trim()}\n\n`;
+}
+
     const linhasPreco = [];
 
     if (precoFisicoPor) {
@@ -238,8 +241,7 @@ app.post('/api/descartar/:id', async (req, res) => {
 // Rota: finaliza a curadoria de um item
 app.post('/api/preparar/:id', async (req, res) => {
   try {
-    const { link, ehKU, precoFisicoDe, precoFisicoPor, precoKindle, percentualPromo, codigoCupom } = req.body;
-    const id = req.params.id;
+const { link, ehKU, precoFisicoDe, precoFisicoPor, precoKindle, percentualPromo, codigoCupom, detalheDestaque } = req.body;    const id = req.params.id;
 
     const item = await pool.query('SELECT * FROM ofertas WHERE id = $1', [id]);
     if (item.rows.length === 0) {
@@ -265,6 +267,9 @@ app.post('/api/preparar/:id', async (req, res) => {
 
     let mensagem = `${chamada}📚 *${oferta.titulo}*\n\n`;
     mensagem += `${oferta.sinopse}\n\n`;
+    if (detalheDestaque && detalheDestaque.trim()) {
+  mensagem += `💡 *Destaque:* ${detalheDestaque.trim()}\n\n`;
+}
 
     const linhasPreco = [];
     if (precoFisicoPor) {

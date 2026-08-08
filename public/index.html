@@ -54,6 +54,9 @@
   <label>Título</label>
   <input id="r-titulo" placeholder="Nome do livro">
 
+  <label>Detalhe Destaque (opcional)</label>
+  <input id="r-destaque" placeholder="Ex: Edição de luxo com capa almofadada">
+
   <div class="checkbox">
     <input type="checkbox" id="r-ku">
     <label style="margin:0">Grátis no Kindle Unlimited</label>
@@ -289,6 +292,9 @@ async function carregarPendentes() {
         <label>Link do produto na Amazon</label>
         <input id="link-${item.id}" placeholder="https://www.amazon.com.br/dp/...">
 
+        <label>Detalhe Destaque (opcional)</label>
+        <input id="destaque-${item.id}" placeholder="Ex: Edição de luxo com capa almofadada">
+
         <div class="checkbox">
           <input type="checkbox" id="ku-${item.id}">
           <label style="margin:0">Grátis no Kindle Unlimited</label>
@@ -345,6 +351,7 @@ async function descartar(id) {
 async function confirmarCuradoria(id) {
   const body = {
     link: document.getElementById('link-' + id).value,
+    detalheDestaque: document.getElementById('destaque-' + id).value,
     ehKU: document.getElementById('ku-' + id).checked,
     precoFisicoDe: document.getElementById('de-' + id).value,
     precoFisicoPor: document.getElementById('por-' + id).value,

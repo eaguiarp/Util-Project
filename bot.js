@@ -62,23 +62,13 @@ bot.on('message', async (msg) => {
     return bot.sendMessage(chatId, '⚠️ Nenhum link válido da Amazon foi identificado.');
   }
 
-  try {
+ try {
     const linkFinal = formatarLinkAfiliado(linkFinalParaPostar);
-    //const linkCurto = await encurtarUrl(linkFinal);
     
-    // Exemplo de envio no bot do Telegram:
-    // const linkFinal = formatarLinkAfiliado(linkOriginalDaLoja);
-    // bot.sendMessage(GRUPO_TRIAGEM_ID, `
-    // 📚 *${produto.titulo}*
-    // 💰 R$ ${produto.preco}
-    //
-    // 👉 [Ver Oferta na Loja](${linkFinal})
-    // `, { parse_mode: 'Markdown' });
-
-    // Substitui todos os links antigos encontrados pelo mesmo link curto
+    // Substitui todos os links antigos encontrados pelo link limpo oficial da Amazon
     let textoZinha = texto;
     for (const urlCandidata of urlsEncontradas) {
-      textoZinha = textoZinha.replace(urlCandidata, linkCurto);
+      textoZinha = textoZinha.replace(urlCandidata, linkFinal);
     }
 
     const photoId = msg.photo ? msg.photo[msg.photo.length - 1].file_id : null;

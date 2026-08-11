@@ -141,7 +141,40 @@ app.post('/api/postar-rapido', async (req, res) => {
     mensagem += `_Comprando por este link, você apoia o Zinha Livros sem pagar nada a mais! 💛_`;
 
     const resultado = await postarMensagem(mensagem);
-    res.json(resultado.ok ? { ok: true, mensagem } : { ok: false, erro: resultado.description });
+
+    if (resultado.ok) {
+      try {
+        // Salva diretamente como 'postado' para aparecer na vitrine
+        if (asin) {
+          const existe = await pool.query('SELECT id FROM ofertas WHERE asin = $1', [asin]);
+          if (existe.rows.length > 0) {
+            await pool.query(
+              `UPDATE ofertas SET titulo = $1, autor = $2, sinopse = $3, capa = $4, link_afiliado = $5, mensagem = $6, status = 'postado', postado_em = NOW()
+               WHERE id = $7`,
+              [titulo.trim(), (autor || '').trim(), '', null, linkAfiliado, mensagem, existe.rows[0].id]
+            );
+          } else {
+            await pool.query(
+              `INSERT INTO ofertas (asin, titulo, autor, sinopse, capa, link_afiliado, mensagem, status, postado_em)
+               VALUES ($1, $2, $3, $4, $5, $6, $7, 'postado', NOW())`,
+              [asin, titulo.trim(), (autor || '').trim(), '', null, linkAfiliado, mensagem]
+            );
+          }
+        } else {
+          await pool.query(
+            `INSERT INTO ofertas (titulo, autor, sinopse, capa, link_afiliado, mensagem, status, postado_em)
+             VALUES ($1, $2, $3, $4, $5, $6, 'postado', NOW())`,
+            [titulo.trim(), (autor || '').trim(), '', null, linkAfiliado, mensagem]
+          );
+        }
+      } catch (dbErr) {
+        console.error('Erro ao salvar postagem rápida no DB:', dbErr.message);
+      }
+
+      res.json({ ok: true, mensagem });
+    } else {
+      res.json({ ok: false, erro: resultado.description });
+    }
   } catch (err) {
     res.status(500).json({ ok: false, erro: err.message });
   }

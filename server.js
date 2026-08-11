@@ -5,7 +5,7 @@ const express = require('express');
 const path = require('path');
 const cookieParser = require('cookie-parser');
 const crypto = require('crypto');
-const { postarMensagem } = require('./lib/telegram');
+const { postarMensagem, postarComImagem } = require('./lib/telegram');
 const { resolverLink } = require('./lib/asin');
 const pool = require('./db');
 const { buscarCandidatos } = require('./lib/googlebooks');
@@ -136,11 +136,15 @@ app.post('/api/postar-rapido', async (req, res) => {
 // Rota: Post de Texto
 app.post('/api/post-texto', async (req, res) => {
   try {
-    const { texto } = req.body;
+    const { texto, imagemUrl } = req.body;
     if (!texto || !texto.trim()) {
       return res.status(400).json({ ok: false, erro: 'Texto vazio.' });
     }
-    const resultado = await postarMensagem(texto);
+
+    const resultado = imagemUrl && imagemUrl.trim()
+      ? await postarComImagem(imagemUrl.trim(), texto)
+      : await postarMensagem(texto);
+
     res.json(resultado.ok ? { ok: true } : { ok: false, erro: resultado.description });
   } catch (err) {
     res.status(500).json({ ok: false, erro: err.message });

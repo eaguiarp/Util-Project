@@ -89,7 +89,10 @@
 
 <!-- ABA: POST DE TEXTO -->
 <div id="painel-texto" class="painel">
-  <label>Mensagem (aceita Markdown: *negrito*, _itálico_)</label>
+  <label>URL da imagem (opcional)</label>
+  <input id="t-imagem" placeholder="https://...">
+
+  <label>Mensagem (aceita Markdown: *negrito*, _itálico_ — limite 1024 caracteres se tiver imagem)</label>
   <textarea id="t-texto" placeholder="Digite o aviso/anúncio..."></textarea>
   <button onclick="enviarTexto()">Postar no canal</button>
   <div id="t-resultado"></div>
@@ -210,6 +213,7 @@ async function enviarRapido() {
 // ---------- POST DE TEXTO ----------
 async function enviarTexto() {
   const texto = document.getElementById('t-texto').value;
+  const imagemUrl = document.getElementById('t-imagem').value;
   const resDiv = document.getElementById('t-resultado');
   resDiv.textContent = 'Enviando...';
   resDiv.className = 'resultado';
@@ -217,7 +221,7 @@ async function enviarTexto() {
   const resp = await fetch('/api/post-texto', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ texto })
+    body: JSON.stringify({ texto, imagemUrl })
   });
   const data = await resp.json();
 
@@ -225,6 +229,7 @@ async function enviarTexto() {
     resDiv.className = 'resultado ok';
     resDiv.textContent = '✅ Postado com sucesso!';
     document.getElementById('t-texto').value = '';
+    document.getElementById('t-imagem').value = '';
   } else {
     resDiv.className = 'resultado erro';
     resDiv.textContent = '❌ Erro: ' + data.erro;

@@ -9,13 +9,27 @@ const { postarMensagem, postarComImagem } = require('./lib/telegram');
 const { resolverLink } = require('./lib/asin');
 const pool = require('./db');
 const { buscarCandidatos } = require('./lib/googlebooks');
-
+const cors = require('cors');
 const SENHA = process.env.PAINEL_SENHA;
 const TOKEN_VALIDO = crypto.createHash('sha256').update(SENHA || '').digest('hex');
 
 const app = express();
 app.use(express.json());
 app.use(cookieParser());
+app.get('/api/vitrine', cors({ origin: 'https://zinha.com.br' }), async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT titulo, autor, sinopse, capa, link_afiliado, postado_em
+       FROM ofertas WHERE status = 'postado'
+       ORDER BY postado_em DESC LIMIT 60`
+    );
+    res.json({ ok: true, itens: result.rows });
+  } catch (err) {
+    res.status(500).json({ ok: false, erro: err.message });
+  }
+});
+
+app.use(exigirLogin);
 
 function exigirLogin(req, res, next) {
   if (req.cookies.painel_auth === TOKEN_VALIDO) {

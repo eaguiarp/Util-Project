@@ -49,11 +49,29 @@ app.post('/api/login', (req, res) => {
 // Rota: Postagem Rápida
 app.post('/api/postar-rapido', async (req, res) => {
   try {
-const { link, titulo, ehKU, precoFisicoDe, precoFisicoPor, precoKindle, percentualPromo, codigoCupom, detalheDestaque } = req.body;
+    const {
+      link,
+      titulo,
+      autor,
+      tipoLivro,
+      ehKU,
+      precoFisicoDe,
+      precoFisicoPor,
+      precoKindle,
+      percentualPromo,
+      codigoCupom,
+      detalheDestaque
+    } = req.body;
+
+    if (!titulo || !titulo.trim()) {
+      return res.status(400).json({ ok: false, erro: 'Título do livro é obrigatório.' });
+    }
+
     const { asin, linkParaExibir } = await resolverLink(link);
     if (!asin) {
       return res.status(400).json({ ok: false, erro: 'ASIN não identificado no link.' });
     }
+
     const linkAfiliado = linkParaExibir;
 
     let chamada = '';
@@ -66,10 +84,14 @@ const { link, titulo, ehKU, precoFisicoDe, precoFisicoPor, precoKindle, percentu
       }
     }
 
-    let mensagem = `${chamada}📚 *${titulo}*\n\n`;
-if (detalheDestaque && detalheDestaque.trim()) {
-  mensagem += `💡 *Destaque:* ${detalheDestaque.trim()}\n\n`;
-}
+    let mensagem = `${chamada}📚 *${titulo.trim()}*\n`;
+    if (autor && autor.trim()) {
+      mensagem += `✍️ ${autor.trim()}\n`;
+    }
+    mensagem += `\n`;
+    if (detalheDestaque && detalheDestaque.trim()) {
+      mensagem += `💡 *Destaque:* ${detalheDestaque.trim()}\n\n`;
+    }
 
     const linhasPreco = [];
 
@@ -97,7 +119,12 @@ if (detalheDestaque && detalheDestaque.trim()) {
     }
 
     mensagem += linhasPreco.join('\n') + '\n';
-    mensagem += `\n🔗 ${linkAfiliado}\n\n_Comprando por este link, você apoia o Zinha Livros sem pagar nada a mais! 💛_`;
+    mensagem += `\n🔗 ${linkAfiliado}\n\n`;
+    if (tipoLivro && tipoLivro.trim()) {
+      const hashtag = '#' + tipoLivro.trim().replace(/\s+/g, '');
+      mensagem += `${hashtag}\n\n`;
+    }
+    mensagem += `_Comprando por este link, você apoia o Zinha Livros sem pagar nada a mais! 💛_`;
 
     const resultado = await postarMensagem(mensagem);
     res.json(resultado.ok ? { ok: true, mensagem } : { ok: false, erro: resultado.description });
@@ -241,7 +268,19 @@ app.post('/api/descartar/:id', async (req, res) => {
 // Rota: finaliza a curadoria de um item
 app.post('/api/preparar/:id', async (req, res) => {
   try {
-const { link, ehKU, precoFisicoDe, precoFisicoPor, precoKindle, percentualPromo, codigoCupom, detalheDestaque } = req.body;    const id = req.params.id;
+    const {
+      link,
+      autor,
+      tipoLivro,
+      ehKU,
+      precoFisicoDe,
+      precoFisicoPor,
+      precoKindle,
+      percentualPromo,
+      codigoCupom,
+      detalheDestaque
+    } = req.body;
+    const id = req.params.id;
 
     const item = await pool.query('SELECT * FROM ofertas WHERE id = $1', [id]);
     if (item.rows.length === 0) {
@@ -265,11 +304,15 @@ const { link, ehKU, precoFisicoDe, precoFisicoPor, precoKindle, percentualPromo,
       }
     }
 
-    let mensagem = `${chamada}📚 *${oferta.titulo}*\n\n`;
-    mensagem += `${oferta.sinopse}\n\n`;
+    let mensagem = `${chamada}📚 *${oferta.titulo}*\n`;
+    const autorFinal = (autor && autor.trim()) || oferta.autor;
+    if (autorFinal) {
+      mensagem += `✍️ ${autorFinal}\n`;
+    }
+    mensagem += `\n${oferta.sinopse || ''}\n\n`;
     if (detalheDestaque && detalheDestaque.trim()) {
-  mensagem += `💡 *Destaque:* ${detalheDestaque.trim()}\n\n`;
-}
+      mensagem += `💡 *Destaque:* ${detalheDestaque.trim()}\n\n`;
+    }
 
     const linhasPreco = [];
     if (precoFisicoPor) {
@@ -296,7 +339,12 @@ const { link, ehKU, precoFisicoDe, precoFisicoPor, precoKindle, percentualPromo,
     }
 
     mensagem += linhasPreco.join('\n') + '\n';
-    mensagem += `\n🔗 ${linkAfiliado}\n\n_Comprando por este link, você apoia o Zinha Livros sem pagar nada a mais! 💛_`;
+    mensagem += `\n🔗 ${linkAfiliado}\n\n`;
+    if (tipoLivro && tipoLivro.trim()) {
+      const hashtag = '#' + tipoLivro.trim().replace(/\s+/g, '');
+      mensagem += `${hashtag}\n\n`;
+    }
+    mensagem += `_Comprando por este link, você apoia o Zinha Livros sem pagar nada a mais! 💛_`;
 
     await pool.query(
       `UPDATE ofertas SET asin = $1, link_afiliado = $2, mensagem = $3, status = 'pronto' WHERE id = $4`,

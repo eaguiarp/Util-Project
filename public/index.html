@@ -54,6 +54,12 @@
   <label>Título</label>
   <input id="r-titulo" placeholder="Nome do livro">
 
+  <label>Autor (opcional)</label>
+  <input id="r-autor" placeholder="Nome do autor">
+
+  <label>Tipo de livro (opcional — vira #hashtag pesquisável no canal)</label>
+  <input id="r-tipo" placeholder="Ex: Romance, Ficção, Não-Ficção">
+
   <label>Detalhe Destaque (opcional)</label>
   <input id="r-destaque" placeholder="Ex: Edição de luxo com capa almofadada">
 
@@ -172,6 +178,8 @@ async function enviarRapido() {
   const body = {
     link: document.getElementById('r-link').value,
     titulo: document.getElementById('r-titulo').value,
+    autor: document.getElementById('r-autor').value,
+    tipoLivro: document.getElementById('r-tipo').value,
     detalheDestaque: document.getElementById('r-destaque').value,
     ehKU: document.getElementById('r-ku').checked,
     precoFisicoDe: document.getElementById('r-de').value,
@@ -292,6 +300,12 @@ async function carregarPendentes() {
         <label>Link do produto na Amazon</label>
         <input id="link-${item.id}" placeholder="https://www.amazon.com.br/dp/...">
 
+        <label>Autor (editar se necessário)</label>
+        <input id="autor-${item.id}" value="${item.autor || ''}" placeholder="Nome do autor">
+
+        <label>Tipo de livro (opcional — vira #hashtag pesquisável no canal)</label>
+        <input id="tipo-${item.id}" placeholder="Ex: Romance, Ficção, Não-Ficção">
+
         <label>Detalhe Destaque (opcional)</label>
         <input id="destaque-${item.id}" placeholder="Ex: Edição de luxo com capa almofadada">
 
@@ -351,6 +365,8 @@ async function descartar(id) {
 async function confirmarCuradoria(id) {
   const body = {
     link: document.getElementById('link-' + id).value,
+    autor: document.getElementById('autor-' + id).value,
+    tipoLivro: document.getElementById('tipo-' + id).value,
     detalheDestaque: document.getElementById('destaque-' + id).value,
     ehKU: document.getElementById('ku-' + id).checked,
     precoFisicoDe: document.getElementById('de-' + id).value,
